@@ -1,4 +1,4 @@
-# 3. Ruby2D Input
+## 3. Ruby2D Input
 
 OK, let's look at some input from Ruby2D. Let's just close the window when we
 hit `Esc`. We can do this without a game loop since event handling is separated

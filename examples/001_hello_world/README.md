@@ -1,4 +1,4 @@
-# 1. Hello World
+## 1. Hello World
 
 This is the absolute simplest example using the least amount of code. It
 doesn't even `require` Pixelometry. You could perhaps consider it cheating

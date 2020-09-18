@@ -1,4 +1,4 @@
-# 2. Some Output
+## 2. Some Output
 
 Still getting familiar with Ruby2D, let's output a label in the actual window.
 No game loop is needed yet, since everything is completely static.

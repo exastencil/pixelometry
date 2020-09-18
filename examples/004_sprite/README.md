@@ -1,4 +1,4 @@
-# 4. Ruby2D Sprite with Animation
+## 4. Ruby2D Sprite with Animation
 
 Now we're starting to get somewhere useful. We'll use a Ruby2D native `Sprite`
 and set up some animations for it. Then we'll use the keys to change the
