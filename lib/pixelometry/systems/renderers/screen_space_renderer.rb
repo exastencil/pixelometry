@@ -12,14 +12,16 @@ class ScreenSpaceRenderer < Renderer
                             width: entity.frame_width,
                             height: entity.frame_height,
                             clip_width: entity.frame_width,
-                            clip_height: entity.frame_height
+                            clip_height: entity.frame_height,
+                            opacity: entity.opacity
                           )
                         else
                           Sprite.new(
                             entity.asset_path,
                             x: entity.x, y: entity.y,
                             width: entity.sprite_width,
-                            height: entity.sprite_height
+                            height: entity.sprite_height,
+                            opacity: entity.opacity
                           )
                         end
 

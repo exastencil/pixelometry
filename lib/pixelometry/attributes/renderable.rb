@@ -21,5 +21,8 @@ define_attribute :renderable do |options|
   property :sprite_height,  default: options[:height]
 
   # The `asset_path` property is used to pass the sprite(sheet) to be loaded
-  property :asset_path
+  property :asset_path, default: options[:asset_path]
+
+  # The sprite opacity (from 0.0 -> transparent to 1.0 -> opaque)
+  property :opacity, default: options[:opacity] || 1.0
 end
