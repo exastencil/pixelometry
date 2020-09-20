@@ -1,3 +1,5 @@
+require 'set'
+
 # Entity Class
 #
 # The `Entity` class stores the entity definitions, while instances of `Entity`
@@ -13,9 +15,18 @@ class Entity
   def initialize(id, &block)
     @id = id
     @properties = {}
+    @attributes = Set[]
     @behaviors = {}
     @triggers = {}
     instance_exec(&block)
+  end
+
+  def inspect
+    "#<Entity:#{@id} attributes: #{@attributes}, properties: #{@properties}>"
+  end
+
+  def to_s
+    inspect
   end
 
   def property(key, opts = {})
@@ -26,6 +37,16 @@ class Entity
     define_singleton_method(key) { @properties[key] }
     # Creates a writer method similar to `attr_writer key` on this object only
     define_singleton_method("#{key}=") { |value| @properties[key] = value }
+  end
+
+  def attribute(identifier, opts = {})
+    templates = Game.class_variable_get(:@@attributes)
+    unless templates.key? identifier
+      raise Pixelometry::Error.new "Undefined attribute `#{identifier}`: Have you defined and required it, or perhaps misspelled it?"
+    end
+
+    instance_exec opts, &templates[identifier]
+    @attributes.add identifier
   end
 
   def behavior(identifier, opts = {}, &block)
@@ -39,12 +60,23 @@ class Entity
     end
   end
 
+  def on(kind, &block)
+    @triggers[kind] ||= []
+    @triggers[kind] << block
+  end
+
   def trigger(kind, event = nil)
-    @triggers[kind]&.each { |b| instance_exec(event, &@behaviors[b]) }
+    @triggers[kind]&.each do |proc_or_behavior_key|
+      if proc_or_behavior_key.is_a? Proc
+        instance_exec(event, &proc_or_behavior_key)
+      else
+        instance_exec(event, &@behaviors[proc_or_behavior_key])
+      end
+    end
   end
 
   def self.from_template(id, template)
-    raise Pixelometry::Error.new "Missing entity template for #{template}" unless @@templates[template]
+    raise Pixelometry::Error, "Missing entity template for #{template}" unless @@templates[template]
 
     new(id, &@@templates[template])
   end

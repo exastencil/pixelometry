@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    pixelometry (2020.09.17)
+    pixelometry (2020.09.20)
       activesupport
       ruby2d
       thor

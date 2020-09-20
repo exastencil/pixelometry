@@ -72,7 +72,7 @@ direction and instead have a sort of state machine that is checked inherently.
 Run the following from the `pixelometry` gem's root folder:
 
 ```sh
-bundle exec ruby examples/004_sprite/game.rb
+bundle exec ruby examples/004_sprite_ruby2d/game.rb
 ```
 
 ## Credits

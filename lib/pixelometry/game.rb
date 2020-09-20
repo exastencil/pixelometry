@@ -19,13 +19,21 @@ class Game
   # Ordinal storage of scenes
   @@scenes = []
 
-  def self.create_scene(template_or_handle = nil, &block)
+  # Attribute definitions
+  @@attributes = {}
+
+  def self.create_scene(template = nil, opts = {}, &block)
     if block_given?
+      # It's possible to pass options without a template
+      if opts.empty? && template.is_a?(Hash)
+        opts = template
+        template = nil
+      end
       # One off scene with optional handle
-      @@scenes << Scene.new(&block)
-    elsif template_or_handle
+      @@scenes << Scene.new(opts[:renderer], &block)
+    elsif template
       # Instantiate a Scene from a template
-      @@scenes << Scene.from_template(template_or_handle)
+      @@scenes << Scene.from_template(template)
     else
       # No block or template
       raise Pixelometry::Error.new 'No template or definition passed to `create_scene`'

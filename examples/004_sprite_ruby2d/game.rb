@@ -10,9 +10,9 @@ label.y = (Window.height - label.height) / 4
 
 # Sprites are 96 x 192
 # Since both are identical we can map them this way
-sprites = %w[assets/man.png assets/woman.png].each_with_index.map do |path, i|
+sprites = %w[man.png woman.png].each_with_index.map do |path, i|
   Sprite.new(
-    "#{__dir__}/#{path}",
+    "#{__dir__}/../assets/#{path}",
     x: Window.width / 2 + (i.positive? ? -64 : 32), # X position
     y: Window.height / 2,                           # Y position
     width: 96 / 3,                                  # sprite width

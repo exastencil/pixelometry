@@ -2,12 +2,15 @@ class Scene
   # Predefined Scene templates
   @@templates = {}
 
-  def initialize(&block)
+  def initialize(renderer = nil, &block)
     # All entities loaded in this scene
     @entities = {}
 
     # Systems registeredd for this scene
     @systems = {}
+
+    # The renderer to use on this scene (a `System`)
+    @renderer = renderer
 
     # Next assignable Entity index
     @assignable_entity_id = 0
@@ -49,6 +52,7 @@ class Scene
         proc.call entity
       end
     end
+    @entities.each { |_id, entity| @renderer.process entity } if @renderer
   end
 
   def trigger(kind, event)

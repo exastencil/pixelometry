@@ -41,8 +41,8 @@ define_game title: 'Pixelometry Sprite Example' do
       label.y = (Window.height - label.height) / 4
     end
 
-    create_entity :character, x: Window.width / 2 - 64, asset_path: "#{__dir__}/assets/man.png"
-    create_entity :character, x: Window.width / 2 + 32, asset_path: "#{__dir__}/assets/woman.png"
+    create_entity :character, x: Window.width / 2 - 64, asset_path: "#{__dir__}/../assets/man.png"
+    create_entity :character, x: Window.width / 2 + 32, asset_path: "#{__dir__}/../assets/woman.png"
 
     # Our own custom implementation of a render system
     # This block gets called once each frame for each entity
