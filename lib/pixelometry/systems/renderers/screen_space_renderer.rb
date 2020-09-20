@@ -25,6 +25,9 @@ class ScreenSpaceRenderer < Renderer
                           )
                         end
 
+      # Update opacity
+      entity.sprite.opacity = entity.opacity
+
       # For animated entities set the current frame
       if entity.animated?
         # Frame configuration for the current animation
