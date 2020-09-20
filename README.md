@@ -35,8 +35,8 @@ pxl new <YOUR_APP_NAME_HERE>
 ```
 
 This will generate a folder with a basic starting point for you. See the
-[examples](https://github.com/exastencil/pixelometry/examples) for examples
-of how to get started.
+[examples](https://github.com/exastencil/pixelometry/tree/master/examples)
+for examples of how to get started.
 
 If you already have a Ruby2D app, you can simply `require 'pixelometry'`
 right after Ruby2D to get access to the DSL and classes.

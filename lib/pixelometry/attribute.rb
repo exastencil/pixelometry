@@ -4,5 +4,3 @@ def define_attribute(identifier, &block)
     @attributes.include? identifier
   end
 end
-
-Dir[File.join(__dir__, 'attributes', '*.rb')].each { |file| require file }

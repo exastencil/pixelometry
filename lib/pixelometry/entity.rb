@@ -76,7 +76,9 @@ class Entity
   end
 
   def self.from_template(id, template)
-    raise Pixelometry::Error, "Missing entity template for #{template}" unless @@templates[template]
+    unless @@templates[template]
+      raise Pixelometry::Error, "Missing entity template for #{template}. Templates: #{@@templates.keys}"
+    end
 
     new(id, &@@templates[template])
   end

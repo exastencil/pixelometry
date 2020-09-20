@@ -14,7 +14,7 @@ define_attribute :renderable do |options|
   # It needs a position to be rendered
   attribute :positioned unless positioned?
 
-  # This property contains the Ruby2D sprite that will be updated on each frame
+  # This property contains the `Ruby2D::Sprite` that will be updated on each frame
   property :sprite
 
   property :sprite_width,   default: options[:width]
