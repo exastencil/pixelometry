@@ -67,10 +67,8 @@ class ScreenSpaceRenderer < Renderer
         entity.text_object.text = entity.text
         entity.text_object.x = entity.x
         entity.text_object.y = entity.y
-        entity.text_object.z = entity.z
-        entity.text_object.color = entity.color
         entity.text_object.rotate = entity.rotation
-        entity.text_object.opacity = entity.opacity
+        entity.text_object.size = entity.font_size
       else
         entity.text_object = Text.new(
           entity.text,
@@ -79,7 +77,8 @@ class ScreenSpaceRenderer < Renderer
           z: entity.z,
           color: entity.color,
           rotate: entity.rotation,
-          opacity: entity.opacity
+          opacity: entity.opacity,
+          size: entity.font_size
         )
       end
     end
