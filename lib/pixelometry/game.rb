@@ -10,11 +10,42 @@ class Game
   # There should only ever be one `Game`
   include Singleton
 
-  # This is the width we will use in all of our calculations
-  @@target_width = 640
+  @@width = 640
+  @@height = 480
 
-  # This is the height we will use in all of our calculations
-  @@target_height = 480
+  def self.width
+    @@width
+  end
+
+  def self.width=(w)
+    @@width = w
+  end
+
+  def self.height
+    @@height
+  end
+
+  def self.height=(h)
+    @@height = h
+  end
+
+  @@pixel_multiple = 1
+
+  # Find the largest integer multiple of the intended resolution that fits on
+  # the screen and lock the window to that size.
+  def self.calculate_scale
+    @@pixel_multiple = [
+      (Window.display_height - 10) / height,
+      Window.display_width / width
+    ].min
+    Window.set(
+      resizable: false, # resizing blurs pixels
+      width: width * @@pixel_multiple,
+      height: height * @@pixel_multiple,
+      viewport_width: width,
+      viewport_height: height
+    )
+  end
 
   # Ordinal storage of scenes
   @@scenes = []
@@ -69,6 +100,11 @@ def define_game(options = {}, &block)
   Window.set(
     title: options[:title] || 'Pixelometry Game'
   )
+
+  Game.width  = options[:width]  if options[:width]
+  Game.height = options[:height] if options[:height]
+  Game.calculate_scale
+
   Game.class_exec(&block)
 
   Window.update do
