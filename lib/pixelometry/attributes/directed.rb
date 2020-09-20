@@ -5,14 +5,13 @@
 #
 define_attribute :directed do |options|
   options ||= {}
-  defaults = options[:default] || {}
 
   # The x-coordinate direction
-  property :x_direction, default: defaults[:x] || 0
+  property :x_direction, default: options[:x] || 0
 
   # The y-coordinate direction
-  property :y_direction, default: defaults[:y] || 0
+  property :y_direction, default: options[:y] || 0
 
   # The z-coordinate direction
-  property :z_direction, default: defaults[:z] || 0
+  property :z_direction, default: options[:z] || 0
 end

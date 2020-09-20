@@ -5,14 +5,13 @@
 #
 define_attribute :positioned do |options|
   options ||= {}
-  defaults = options[:default] || {}
 
   # The x-coordinate
-  property :x, default: defaults[:x] || 0
+  property :x, default: options[:x] || 0
 
   # The y-coordinate
-  property :y, default: defaults[:y] || 0
+  property :y, default: options[:y] || 0
 
   # The z-coordinate
-  property :z, default: defaults[:z] || 0
+  property :z, default: options[:z] || 0
 end
