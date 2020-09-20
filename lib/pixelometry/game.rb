@@ -84,6 +84,14 @@ class Game
              else
                :unknown
              end
+           when Ruby2D::Window::MouseEvent
+             case event.type
+             when :move then :mouse_move
+             when :down then :mouse_down
+             when :up then :mouse_up
+             else
+               :unknown
+             end
            else
              :unknown
            end
@@ -111,7 +119,8 @@ def define_game(options = {}, &block)
     Game.update
   end
 
-  Window.on(:key) { |e| Game.trigger e }
+  Window.on(:key)   { |e| Game.trigger e }
+  Window.on(:mouse) { |e| Game.trigger e }
 
   Window.show
 end
