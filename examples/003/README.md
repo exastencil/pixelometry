@@ -9,5 +9,5 @@ from the game loop.
 Run the following from the `pixelometry` gem's root folder:
 
 ```sh
-bundle exec ruby examples/003_input/game.rb
+bundle exec ruby examples/003/game.rb
 ```

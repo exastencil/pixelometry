@@ -8,5 +8,5 @@ No game loop is needed yet, since everything is completely static.
 Run the following from the `pixelometry` gem's root folder:
 
 ```sh
-bundle exec ruby examples/002_output/game.rb
+bundle exec ruby examples/002/game.rb
 ```

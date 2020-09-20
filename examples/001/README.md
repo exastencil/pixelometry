@@ -11,5 +11,5 @@ working before going further.
 Run the following from the `pixelometry` gem's root folder:
 
 ```sh
-bundle exec ruby examples/001_hello_world/game.rb
+bundle exec ruby examples/001/game.rb
 ```

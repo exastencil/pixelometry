@@ -29,7 +29,7 @@ animation without adding more frames.
 Run the following from the `pixelometry` gem's root folder:
 
 ```sh
-bundle exec ruby examples/006_sprite_pixelometry_builtins/game.rb
+bundle exec ruby examples/006/game.rb
 ```
 
 ## Credits

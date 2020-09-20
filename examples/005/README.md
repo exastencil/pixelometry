@@ -60,7 +60,7 @@ them.
 Run the following from the `pixelometry` gem's root folder:
 
 ```sh
-bundle exec ruby examples/005_sprite_pixelometry_primitives/game.rb
+bundle exec ruby examples/005/game.rb
 ```
 
 ## Credits

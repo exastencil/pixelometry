@@ -9,5 +9,5 @@ manipulate the a `Ruby2D:Text` in a way that conforms to `renderable`.
 Run the following from the `pixelometry` gem's root folder:
 
 ```sh
-bundle exec ruby examples/007_labels/game.rb
+bundle exec ruby examples/007/game.rb
 ```
