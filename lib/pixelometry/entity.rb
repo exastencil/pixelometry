@@ -12,8 +12,9 @@ class Entity
   # Internal storage of entity templates
   @@templates = {}
 
-  def initialize(id, &block)
+  def initialize(id, scene, &block)
     @id = id
+    @scene = scene
     @properties = {}
     @attributes = Set[]
     @behaviors = {}
@@ -75,12 +76,16 @@ class Entity
     end
   end
 
-  def self.from_template(id, template)
+  def emit(kind, event = nil)
+    @scene.trigger kind, event
+  end
+
+  def self.from_template(id, scene, template)
     unless @@templates[template]
       raise Pixelometry::Error, "Missing entity template for #{template}. Templates: #{@@templates.keys}"
     end
 
-    new(id, &@@templates[template])
+    new(id, scene, &@@templates[template])
   end
 end
 
@@ -88,7 +93,7 @@ def define_entity(template_name, &block)
   raise Pixelometry::Error, 'No block given to `define_entity`' unless block_given?
 
   # Run the definition once to check the syntax
-  Entity.new(0, &block)
+  Entity.new(0, nil, &block)
 
   templates = Entity.class_variable_get(:@@templates)
   templates[template_name] = block
