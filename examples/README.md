@@ -22,3 +22,15 @@ to the documentation for explanations and capabilities.
 5. [Pixelometry Sprite with Animation](https://github.com/exastencil/pixelometry/tree/master/examples/005)
 6. [Pixelometry Entities using Builtins](https://github.com/exastencil/pixelometry/tree/master/examples/006)
 7. [Label Entities](https://github.com/exastencil/pixelometry/tree/master/examples/007)
+
+## Example Games
+
+### [Fie, Foh, Fum](https://github.com/exastencil/pixelometry/tree/master/examples/fie_foh_fum)
+
+This is a very simple tic tac toe game. It uses one UI scene to render some
+text from a spritesheet as a title and for feedback to the user. It also has
+some entities to act as "buttons" on the board for the user to click on to
+make a move and store game state. It uses events passed from the buttons to
+the opponent AI to trigger moves (note the bug where the opponent moves after
+the victory condition due to this approach). Finally, there's a block that
+executes every frame to check for a winner, sort of like a behaviour on the scene.
