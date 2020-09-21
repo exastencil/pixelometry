@@ -4,7 +4,7 @@ require 'pixelometry'
 define_entity :character do
   # Screen position to render the sprite
   property :x, default: 0
-  property :y, default: Window.height / 2
+  property :y, default: Game.height / 2
 
   # Which direction the sprite is facing
   property :direction, default: :left
@@ -37,12 +37,12 @@ define_game title: 'Pixelometry Sprite Example' do
   create_scene do
     # Display instructions (same as previous implementation)
     Text.new('Press Left or Right to walk', color: 'lime').tap do |label|
-      label.x = (Window.width - label.width) / 2
-      label.y = (Window.height - label.height) / 4
+      label.x = (Game.width - label.width) / 2
+      label.y = (Game.height - label.height) / 4
     end
 
-    create_entity :character, x: Window.width / 2 - 64, asset_path: "#{__dir__}/../assets/man.png"
-    create_entity :character, x: Window.width / 2 + 32, asset_path: "#{__dir__}/../assets/woman.png"
+    create_entity :character, x: Game.width / 2 - 64, asset_path: "#{__dir__}/../assets/man.png"
+    create_entity :character, x: Game.width / 2 + 32, asset_path: "#{__dir__}/../assets/woman.png"
 
     # Our own custom implementation of a render system
     # This block gets called once each frame for each entity

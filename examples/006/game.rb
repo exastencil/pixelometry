@@ -4,7 +4,7 @@ require 'pixelometry'
 # Since we will have two, let's define the template and reuse it
 define_entity :character do
   # Positioned means it has x, y and z properties
-  attribute :positioned, default: { y: Window.height / 2 }
+  attribute :positioned, y: Game.height / 2
 
   # Which direction the sprite is facing
   attribute :directed, default: { x: 1 }
@@ -43,7 +43,7 @@ end
 define_game title: 'Pixelometry Sprite Example with Builtins' do
   # World
   create_scene renderer: ScreenSpaceRenderer do
-    create_entity :character, x: Window.width / 2 - 64, asset_path: "#{__dir__}/../assets/man.png" do
+    create_entity :character, x: Game.width / 2 - 64, asset_path: "#{__dir__}/../assets/man.png" do
       on :key_down do |event|
         self.x_direction =  1 if event.key == 'left'
         self.x_direction = -1 if event.key == 'right'
@@ -63,8 +63,8 @@ define_game title: 'Pixelometry Sprite Example with Builtins' do
   create_scene do
     # Display instructions (same as previous implementation)
     Text.new('Press Left or Right to walk', color: 'lime').tap do |label|
-      label.x = (Window.width - label.width) / 2
-      label.y = (Window.height - label.height) / 4
+      label.x = (Game.width - label.width) / 2
+      label.y = (Game.height - label.height) / 4
     end
   end
 end
