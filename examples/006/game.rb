@@ -50,7 +50,7 @@ define_game title: 'Pixelometry Sprite Example with Builtins' do
         play :walking if %w[left right].include? event.key
       end
     end
-    create_entity :character, x: Window.width / 2 + 32, asset_path: "#{__dir__}/../assets/woman.png" do
+    create_entity :character, x: Game.width / 2 + 32, asset_path: "#{__dir__}/../assets/woman.png" do
       on :key_down do |event|
         self.x_direction =  1 if event.key == 'left'
         self.x_direction = -1 if event.key == 'right'
