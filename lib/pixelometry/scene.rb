@@ -15,6 +15,10 @@ class Scene
     # The scene custom update block
     @update_proc = proc {}
 
+    # Which entities subscribe to which events
+    # (Symbol (event_type) => Set[Integer (entity id)])
+    @triggers = {}
+
     # Next assignable Entity index
     @assignable_entity_id = 0
     instance_exec(&block)
@@ -67,9 +71,21 @@ class Scene
   end
 
   def trigger(kind, event)
-    # TODO: Keep track of entities with triggers and emit only to them
-    @entities.each do |_id, entity|
-      entity.trigger kind, event
+    if @triggers.key? kind # any entities care?
+      @triggers[kind].each do |entity_id|
+        @entities[entity_id]&.trigger kind, event
+      end
     end
+  end
+
+  def refresh_triggers(entity_id, triggers)
+    @triggers.each do |_event_type, entity_ids|
+      entity_ids -= [entity_id]
+    end
+    triggers.each do |event_type, _behavior|
+      @triggers[event_type] ||= Set[]
+      @triggers[event_type] << entity_id
+    end
+    @triggers = @triggers.select { |_, v| !v.empty? }
   end
 end

@@ -13,12 +13,19 @@ class Entity
   @@templates = {}
 
   def initialize(id, scene, &block)
+    # Entity ID
     @id = id
+    # Reference to the scene for emitting events
     @scene = scene
+    # Properties defined on this entity with symbol keys and current values
     @properties = {}
+    # Set of attributes this entity has (conforms to)
     @attributes = Set[]
+    # Triggerable behaviors of this entity (key is a symbol identifier, value is the Proc to run)
     @behaviors = {}
+    # Configurable triggers for behaviors (Symbol (trigger) => Set[Symbol (behavior)])
     @triggers = {}
+
     instance_exec(&block)
   end
 
@@ -62,8 +69,10 @@ class Entity
   end
 
   def on(kind, &block)
-    @triggers[kind] ||= []
+    @triggers[kind] ||= Set[]
     @triggers[kind] << block
+
+    @scene.refresh_triggers @id, @triggers if @id && @scene
   end
 
   def trigger(kind, event = nil)
