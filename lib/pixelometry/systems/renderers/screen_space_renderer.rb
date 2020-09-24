@@ -47,9 +47,18 @@ class ScreenSpaceRenderer < Renderer
                   end
                   if current_frame >= frames.size
                     total_time = frames.sum { |f| f[:duration] }
-                    # TODO: Animation is done, loop if necessary
-                    entity.animation_started += total_time
-                    frames.first
+                    # Animation is done, loop if necessary or stop on last frame
+                    if entity.animation_repeats == true
+                      entity.animation_started += total_time
+                      frames.first
+                    elsif entity.animation_repeats > 1 # Already ran once, so repeat only if needed twice
+                      entity.animation_repeats -= 1
+                      entity.animation_started += total_time
+                      frames.first
+                    else
+                      entity.animation_started = nil
+                      frames.last
+                    end
                   else
                     frames[current_frame]
                   end

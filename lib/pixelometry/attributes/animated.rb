@@ -20,9 +20,9 @@
 define_attribute :animated do |options|
   options ||= {}
 
-  raise Pixelometry::Error.new 'Only `renderable` entities can be animated.' unless renderable?
+  raise Pixelometry::Error, 'Only `renderable` entities can be animated.' unless renderable?
   unless options[:animations]
-    raise Pixelometry::Error.new 'No animations provided. Please specify with `:animations` on `:animated` attribute'
+    raise Pixelometry::Error, 'No animations provided. Please specify with `:animations` on `:animated` attribute'
   end
 
   # These are used for calculations during rendering
@@ -38,6 +38,9 @@ define_attribute :animated do |options|
 
   # The time the current animation started
   property :animation_started
+
+  # Should the current animation restart once finished
+  property :animation_repeats, default: false
 
   # The animations property holds a normal set of animations
   property :animations, default: Hash[
@@ -89,8 +92,9 @@ define_attribute :animated do |options|
     end
   ]
 
-  def play(animation_key)
+  def play(animation_key, repeats = nil)
     self.animation = animation_key
     self.animation_started = (Time.now.to_f * 1000).to_i
+    self.animation_repeats = repeats.nil? ? true : repeats.to_i
   end
 end
