@@ -1,14 +1,9 @@
 require 'pixelometry'
 
-define_entity :text do
-  attribute :renderable, asset_path: "#{__dir__}/assets/text.png", width: 128, height: 180
-  attribute :animated, width: 128, height: 16, animations: {
-    title: 0,
-    click: 1,
-    win: 2,
-    lose: 3,
-    tie: 4
-  }
+require "#{__dir__}/../assets/terminus"
+
+define_entity :title do
+  attribute :renderable, asset_path: "#{__dir__}/assets/text.png", width: 128, height: 16
 end
 
 define_entity :bars do
@@ -61,11 +56,14 @@ end
 define_game title: 'Fie, foh, fum', width: 128, height: 24 + 128 + 24 do
   create_scene renderer: ScreenSpaceRenderer do
     # Title
-    create_entity :text, y: 4
+    create_entity :title, y: 4
     # Board
     create_entity :bars, y: 24
     # Instructions
-    message = create_entity :text, y: 24 + 128 + 4, animation: :click
+    click = create_entity :label, text: 'Click a space to move', x: 7, y: 30 + 128, font: :terminus, color: '#d9a066'
+    won   = create_entity :label, text: 'You have won!',         x: 7, y: 30 + 128, font: :terminus, color: '#d9a066', visible: false
+    lost  = create_entity :label, text: 'You have lost!',        x: 7, y: 30 + 128, font: :terminus, color: '#d9a066', visible: false
+    tied  = create_entity :label, text: 'You have tied!',        x: 7, y: 30 + 128, font: :terminus, color: '#d9a066', visible: false
 
     # Slots
     slots = [
@@ -92,19 +90,28 @@ define_game title: 'Fie, foh, fum', width: 128, height: 24 + 128 + 24 do
 
     # Check for win condition
     each_frame do
-      if message.animation == :click
+      if click.visible
         # No one has won
         rows      = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
         columns   = [[0, 3, 6], [1, 4, 7], [2, 5, 8]]
         diagonals = [[0, 4, 8], [2, 4, 6]]
 
         (rows + columns + diagonals).any? do |slot_indices|
-          message.play :win if slot_indices.all? { |i| slots[i].occupant == :player }
-          message.play :lose if slot_indices.all? { |i| slots[i].occupant == :opponent }
+          if slot_indices.all? { |i| slots[i].occupant == :player }
+            click.visible = false
+            won.visible = true
+          end
+          if slot_indices.all? { |i| slots[i].occupant == :opponent }
+            click.visible = false
+            lost.visible = true
+          end
         end
 
         unless slots.any? { |slot| slot.occupant.nil? }
-          message.play :tie if message.animation == :click
+          if click.visible
+            click.visible = false
+            tied.visible = true
+          end
         end
       else
         # Someone has won

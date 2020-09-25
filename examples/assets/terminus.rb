@@ -1,5 +1,5 @@
 define_font :terminus,
-            path: "#{__dir__}/../assets/terminus.png",
+            path: "#{__dir__}/terminus.png",
             size: 12,
             glyphs: {
               # Encoding => [x_offset, glyph_width]

@@ -1,10 +1,10 @@
 # Load Ruby2D and Pixelometry
 require 'pixelometry'
 
-require "#{__dir__}/fonts/terminus"
+require "#{__dir__}/../assets/terminus"
 
 # Set up the structure of our game
-define_game title: 'Pixelometry Sprite Example with Builtins' do
+define_game title: 'Pixelometry Label Examples' do
   # UI Layer
   create_scene renderer: ScreenSpaceRenderer do
     create_entity :label, text: 'A basic label'

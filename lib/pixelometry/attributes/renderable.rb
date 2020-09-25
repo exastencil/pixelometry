@@ -14,6 +14,9 @@ define_attribute :renderable do |options|
   # It needs a position to be rendered
   attribute :positioned unless positioned?
 
+  # Acts as a short-circuit for rendering
+  property :visible, default: true
+
   # This property contains the `Ruby2D::Sprite` that will be updated on each frame
   property :sprite
 

@@ -6,6 +6,12 @@ class ScreenSpaceRenderer < Renderer
     return unless entity.renderable? || entity.typographical?
 
     if entity.renderable?
+      # Free sprite if no longer visible
+      unless entity.visible
+        entity.sprite&.remove
+        return
+      end
+
       # Assign a Sprite
       entity.sprite ||= if entity.animated?
                           Sprite.new(
@@ -79,6 +85,12 @@ class ScreenSpaceRenderer < Renderer
     end
 
     if entity.typographical?
+      # Free Sprites or Text if no longer visible
+      unless entity.visible
+        Array[entity.text_object].flatten.compact.each(&:remove)
+        return
+      end
+
       if entity.font.is_a? Symbol
         # Pixelometry::Font
         unless entity.text_object
