@@ -1,3 +1,5 @@
+require 'chunky_png'
+
 class ScreenSpaceRenderer < Renderer
   def self.process(entity)
     # Skip entities that aren't renderable
@@ -77,23 +79,48 @@ class ScreenSpaceRenderer < Renderer
     end
 
     if entity.typographical?
-      if entity.text_object
-        entity.text_object.text = entity.text
-        entity.text_object.x = entity.x
-        entity.text_object.y = entity.y
-        entity.text_object.rotate = entity.rotation
-        entity.text_object.size = entity.font_size
+      if entity.font.is_a? Symbol
+        # Pixelometry::Font
+        unless entity.text_object
+          font = Pixelometry::Font.get entity.font
+          x_offset = 0
+          entity.text_object = entity.text.each_codepoint.map do |encoding|
+            glyph = font.glyph encoding
+            x_offset += glyph[:width]
+            Sprite.new(
+              font.path,
+              {
+                x: entity.x + x_offset - glyph[:width],
+                y: entity.y,
+                width: glyph[:width],
+                clip_width: glyph[:width],
+                clip_x: glyph[:clip_x],
+                color: entity.color,
+                opacity: entity.opacity
+              }
+            )
+          end.flatten
+        end
       else
-        entity.text_object = Text.new(
-          entity.text,
-          x: entity.x,
-          y: entity.y,
-          z: entity.z,
-          color: entity.color,
-          rotate: entity.rotation,
-          opacity: entity.opacity,
-          size: entity.font_size
-        )
+        # Ruby2D::Text
+        if entity.text_object
+          entity.text_object.text = entity.text
+          entity.text_object.x = entity.x
+          entity.text_object.y = entity.y
+          entity.text_object.rotate = entity.rotation
+          entity.text_object.size = entity.font_size
+        else
+          entity.text_object = Text.new(
+            entity.text,
+            x: entity.x,
+            y: entity.y,
+            z: entity.z,
+            color: entity.color,
+            rotate: entity.rotation,
+            opacity: entity.opacity,
+            size: entity.font_size
+          )
+        end
       end
     end
   end

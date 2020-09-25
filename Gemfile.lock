@@ -1,8 +1,10 @@
 PATH
   remote: .
   specs:
-    pixelometry (2020.09.21)
+    pixelometry (2020.09.25)
       activesupport
+      chunky_png
+      ruby-bitmap-fonts
       ruby2d
       thor
 
@@ -15,6 +17,7 @@ GEM
       minitest (~> 5.1)
       tzinfo (~> 1.1)
       zeitwerk (~> 2.2, >= 2.2.2)
+    chunky_png (1.3.12)
     concurrent-ruby (1.1.7)
     diff-lcs (1.4.4)
     i18n (1.8.5)
@@ -34,6 +37,7 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.9.0)
     rspec-support (3.9.3)
+    ruby-bitmap-fonts (0.1.1)
     ruby2d (0.9.4)
     thor (1.0.1)
     thread_safe (0.3.6)

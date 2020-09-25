@@ -9,7 +9,7 @@ define_attribute :typographical do
   # Property to store the `Ruby2D::Text` used to render the text
   property :text_object
 
-  # A `Ruby2D::Font` to use
+  # A `Ruby2D::Font` or `BDF::Font` to use
   property :font, default: Font.default
 
   # The font size in points

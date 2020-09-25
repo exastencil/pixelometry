@@ -1,0 +1,9 @@
+define_font :<%= @font_family.underscore %>,
+  path: "<%= @sprite_path %>",
+  size: <%= @font_size %>,
+  glyphs: {
+    # Encoding => [x_offset, glyph_width]
+  <%- @glyph_markers.each do |encoding, values| -%>
+    <%= "#{encoding} => #{values}," %>
+  <%- end -%>
+  }

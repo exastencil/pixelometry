@@ -19,7 +19,9 @@ Gem::Specification.new do |spec|
   spec.metadata['changelog_uri'] = 'https://github.com/exastencil/pixelometry/README.md'
 
   spec.add_dependency 'activesupport'
+  spec.add_dependency 'chunky_png'
   spec.add_dependency 'ruby2d'
+  spec.add_dependency 'ruby-bitmap-fonts'
   spec.add_dependency 'thor'
 
   spec.add_development_dependency 'rspec', '~> 3.8'

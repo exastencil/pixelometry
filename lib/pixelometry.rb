@@ -3,6 +3,7 @@ require 'ruby2d'
 require 'pixelometry/version'
 require 'pixelometry/game'
 require 'pixelometry/entity'
+require 'pixelometry/font'
 require 'pixelometry/attribute'
 require 'pixelometry/system'
 

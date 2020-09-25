@@ -1,6 +1,7 @@
 require 'thor'
 
 require 'pixelometry/generators/entity'
+require 'pixelometry/generators/font'
 
 module Pixelometry
   class CLI < Thor
@@ -17,6 +18,11 @@ module Pixelometry
       else
         raise "Unknown resource type #{type} (supported types: entity)"
       end
+    end
+
+    desc 'font PATH', 'Generates a font sprite from a BDF file and registers it'
+    def font(path)
+      Pixelometry::Generators::Font.start [path]
     end
   end
 end
