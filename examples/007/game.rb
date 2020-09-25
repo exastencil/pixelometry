@@ -17,7 +17,7 @@ define_game title: 'Pixelometry Sprite Example with Builtins' do
 
     whacky_text = create_entity(
       :label,
-      text: "Let's go a little crazy!",
+      text: "Let's  go  a  little  crazy!",
       x: 20, y: 250,
       color: 'random',
       font: :terminus
@@ -33,14 +33,16 @@ define_game title: 'Pixelometry Sprite Example with Builtins' do
     )
 
     each_frame do
-      next unless Window.frames % 15 == 0
+      next unless Window.frames % 5 == 0
 
       whacky_text.text_object.each do |sprite|
         sprite.y = rand(249..251)
         sprite.color = 'random'
       end
 
-      text_reveal.text_object[0..(Window.frames / 15)].each { |sprite| sprite.opacity = 1.0 }
+      next if Window.frames > text_reveal.text.size * 5
+
+      text_reveal.text_object[0..(Window.frames / 5)].each { |sprite| sprite.opacity = 1.0 }
     end
   end
 end

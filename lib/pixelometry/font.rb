@@ -34,6 +34,6 @@ def define_font(name, opts = {})
   if File.exist? opts[:path]
     Pixelometry::Font.new name.to_sym, opts
   else
-    raise Pixelometry::Error.new "Could not load sprite for font #{name} at #{path}"
+    raise Pixelometry::Error, "Could not load sprite for font #{name} at #{opts[:path]}"
   end
 end
