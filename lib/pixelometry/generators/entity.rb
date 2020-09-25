@@ -10,10 +10,10 @@ module Pixelometry
         File.dirname(__FILE__) + '/templates'
       end
 
-      argument :class_name, type: :string
+      argument :template_name, type: :string
 
       def empty_entity
-        template 'entity.rb.erb', "entities/#{class_name}.rb"
+        template 'entity.rb.erb', "entities/#{template_name}.rb"
       end
     end
   end

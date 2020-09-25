@@ -1,12 +1,16 @@
-require 'ruby2d'
+# Load Ruby2D and Pixelometry
 require 'pixelometry'
 
-# Ruby2D Window Configuration
-set title: '<%= app_name.title_case %>'
+# Set up the structure of our game
+define_game title: '<%= app_name.humanize %>' do
+  # World
+  create_scene do
+    # Create entities for your game here
+  end
 
-# Ruby2D Game Loop
-update do
-
+  # UI
+  create_scene renderer: ScreenSpaceRenderer do
+    # Create any UI for your game here
+    create_entity :label, text: 'Edit game.rb to get started', x: 200, y: 200, opacity: 0.8
+  end
 end
-
-show
