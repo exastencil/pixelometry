@@ -65,6 +65,7 @@ class Entity
       triggers = @triggers[opts[:on]] || []
       triggers << identifier
       @triggers[opts[:on]] = triggers
+      @scene.refresh_triggers @id, @triggers if @id && @scene
     end
   end
 
