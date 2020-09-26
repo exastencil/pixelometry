@@ -64,7 +64,7 @@ class Scene
     end
     @update_proc.call
     if @renderer
-      @entities.values
+      @entities.values.select { |e| e.renderable? || e.typographical? }
                .sort { |a, b| @renderer.render_order(a, b) }
                .each { |entity| @renderer.process entity }
     end

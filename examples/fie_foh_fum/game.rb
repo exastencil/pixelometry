@@ -97,16 +97,19 @@ define_game title: 'Fie, foh, fum', width: 128, height: 24 + 128 + 24 do
         diagonals = [[0, 4, 8], [2, 4, 6]]
 
         (rows + columns + diagonals).any? do |slot_indices|
+          # Player wins if they have a line
           if slot_indices.all? { |i| slots[i].occupant == :player }
             click.visible = false
             won.visible = true
           end
+          # Opponent wins if they have a row
           if slot_indices.all? { |i| slots[i].occupant == :opponent }
             click.visible = false
             lost.visible = true
           end
         end
 
+        # It's a tie if all slots are full
         unless slots.any? { |slot| slot.occupant.nil? }
           if click.visible
             click.visible = false
