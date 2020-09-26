@@ -67,7 +67,7 @@ class Game
       @@scenes << Scene.from_template(template)
     else
       # No block or template
-      raise Pixelometry::Error.new 'No template or definition passed to `create_scene`'
+      raise Pixelometry::Error, 'No template or definition passed to `create_scene`'
     end
   end
 
@@ -81,6 +81,7 @@ class Game
              case event.type
              when :down then :key_down
              when :up then :key_up
+             when :held then :key_held
              else
                :unknown
              end

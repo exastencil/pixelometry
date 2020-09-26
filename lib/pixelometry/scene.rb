@@ -6,7 +6,7 @@ class Scene
     # All entities loaded in this scene
     @entities = {}
 
-    # Systems registeredd for this scene
+    # Systems registered for this scene
     @systems = {}
 
     # The renderer to use on this scene (a `System`)
@@ -63,7 +63,11 @@ class Scene
       end
     end
     @update_proc.call
-    @entities.each { |_id, entity| @renderer.process entity } if @renderer
+    if @renderer
+      @entities.values
+               .sort { |a, b| @renderer.render_order(a, b) }
+               .each { |entity| @renderer.process entity }
+    end
   end
 
   def each_frame(&block)

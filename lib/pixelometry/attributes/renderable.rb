@@ -8,7 +8,7 @@
 define_attribute :renderable do |options|
   options ||= {}
   unless options[:width] && options[:height]
-    raise Pixelometry::Error.new 'Missing dimensions for `renderable`. Please provide `:width` and `:height` to `attribute :renderable`.'
+    raise Pixelometry::Error, 'Missing dimensions for `renderable`. Please provide `:width` and `:height` to `attribute :renderable`.'
   end
 
   # It needs a position to be rendered
@@ -28,4 +28,7 @@ define_attribute :renderable do |options|
 
   # The sprite opacity (from 0.0 -> transparent to 1.0 -> opaque)
   property :opacity, default: options[:opacity] || 1.0
+
+  # Color can be overridden in some cases
+  property :color
 end

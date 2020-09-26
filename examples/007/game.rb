@@ -1,6 +1,7 @@
 # Load Ruby2D and Pixelometry
 require 'pixelometry'
 
+# Load a bitmap font
 require "#{__dir__}/../assets/terminus"
 
 # Set up the structure of our game

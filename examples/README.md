@@ -22,6 +22,7 @@ to the documentation for explanations and capabilities.
 5. [Pixelometry Sprite with Animation](https://github.com/exastencil/pixelometry/tree/master/examples/005)
 6. [Pixelometry Entities using Builtins](https://github.com/exastencil/pixelometry/tree/master/examples/006)
 7. [Label Entities](https://github.com/exastencil/pixelometry/tree/master/examples/007)
+8. [World Space Rendering](https://github.com/exastencil/pixelometry/tree/master/examples/008)
 
 ## Example Games
 
