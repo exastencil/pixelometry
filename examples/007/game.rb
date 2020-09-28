@@ -37,7 +37,6 @@ define_game title: 'Pixelometry Label Examples' do
       next unless Window.frames % 5 == 0
 
       whacky_text.text_object.each do |sprite|
-        sprite.y = rand(249..251)
         sprite.color = 'random'
       end
 

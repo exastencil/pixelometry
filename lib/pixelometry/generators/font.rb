@@ -23,11 +23,13 @@ module Pixelometry
         @font_width  = bdf.properties['SETWIDTH_NAME']
         @font_slant  = bdf.properties['SLANT'] || 'R'
         @font_size   = bdf.properties['PIXEL_SIZE']
+        @font_ascent = bdf.properties['FONT_ASCENT']
+        @font_descent = bdf.properties['FONT_DESCENT']
 
         # Prepare to generate the sprite sheet
         chars = bdf.instance_variable_get('@chars')
         glyph_count = chars.size
-        texture_width = chars.sum { |_c, attrs| attrs[:bbx][:w] }
+        texture_width = chars.sum { |_c, attrs| attrs[:dwidth][:x] }
         texture_height = @font_size
 
         # Generate the sprite sheet using ChunkyPNG
@@ -36,18 +38,18 @@ module Pixelometry
         @glyph_markers = {}
 
         chars.each do |_name, char|
-          @glyph_markers[char[:encoding]] = [cursor, char[:bbx][:w]]
-          char[:bitmap].each_with_index do |line_string, row|
+          @glyph_markers[char[:encoding]] = [cursor, char[:dwidth][:x]]
+          char[:bitmap]&.each_with_index do |line_string, row|
             line_string.to_i(16).to_s(2).rjust(line_string.size * 4, '0').each_char.with_index do |bitstring, column|
               next unless bitstring === '1'
 
               png[
-                cursor + column,
-                row
+                cursor + column + char[:bbx][:off_x],
+                row - char[:bbx][:h] + @font_ascent - char[:bbx][:off_y]
               ] = ChunkyPNG::Color 'white'
             end
           end
-          cursor += char[:bbx][:w]
+          cursor += char[:dwidth][:x]
         end
 
         @sprite_path = "assets/#{@font_family.underscore}.png"

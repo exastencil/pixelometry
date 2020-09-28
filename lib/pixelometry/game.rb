@@ -29,6 +29,10 @@ class Game
     @@height = h
   end
 
+  def self.background=(color)
+    Window.set background: color
+  end
+
   @@pixel_multiple = 1
 
   # Find the largest integer multiple of the intended resolution that fits on
@@ -112,6 +116,7 @@ def define_game(options = {}, &block)
 
   Game.width  = options[:width]  if options[:width]
   Game.height = options[:height] if options[:height]
+  Game.background = options[:background] if options[:background]
   Game.calculate_scale
 
   Game.class_exec(&block)

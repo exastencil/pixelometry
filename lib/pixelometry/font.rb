@@ -9,7 +9,11 @@ class Pixelometry::Font
   end
 
   def self.get(name)
-    @@fonts[name]
+    if @@fonts.has_key? name
+      @@fonts[name]
+    else
+      raise Pixelometry::Error, "Font #{name} not found! Have you loaded it?"
+    end
   end
 
   def initialize(name, opts)
@@ -22,6 +26,10 @@ class Pixelometry::Font
   end
 
   def glyph(encoding)
+    unless @glyphs[encoding]
+      raise Pixelometry::Error, "Missing glyph for encoding #{encoding} (#{encoding.chr}) in font `#{name}`"
+    end
+
     {
       clip_x: @glyphs[encoding][0],
       width: @glyphs[encoding][1],
