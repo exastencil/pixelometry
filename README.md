@@ -1,80 +1,85 @@
 # Pixelometry
 
-Pixelometry is a gem that helps you build isometric pixel art games on top of
-[Ruby2D](https://ruby2d.com). It aims to add utility classes and a DSL to it,
-that not only removes the tedium of building a game with only code, but also
-applies the structure and optimizations that make sense for such a game.
+A pixel graphics library built with Zig and Sokol.
 
-A good way to think of it is as a [Gamebox](https://gamebox.io) for
-[Ruby2D](https://ruby2d.com) for isometric pixel art games. The approach taken
-will be to start as a gem (which will require a typical Ruby runtime) and to
-later add support for [mruby](https://mruby.org/) and native builds.
+## Building and Running
 
-## Installation
+```bash
+# Run the basic example
+zig build run
 
-If using Bundler add this line to your application's Gemfile:
-
-```ruby
-gem 'pixelometry'
+# Build for web (requires Emscripten)
+zig build -Dtarget=wasm32-emscripten
 ```
-
-And then execute:
-
-    $ bundle install
-
-Or install it yourself as:
-
-    $ gem install pixelometry
 
 ## Usage
 
-In most cases you would want to start a project with Pixelometry:
+Pixelometry provides a simple API for creating graphics applications. You can configure the window title, size, and background color:
 
-```sh
-pxl new <YOUR_APP_NAME_HERE>
+```zig
+const pixelometry = @import("pixelometry");
+
+pub fn main() void {
+    pixelometry.runApp(.{
+        .title = "My App",
+        .width = 800,
+        .height = 600,
+    }, .{
+        .init_fn = onInit,
+        .frame_fn = onFrame,
+        .cleanup_fn = onCleanup,
+        .event_fn = onEvent,
+    });
+}
+
+fn onInit() void {
+    // Initialize your graphics resources
+}
+
+fn onFrame() void {
+    // Render your frame
+}
+
+fn onCleanup() void {
+    // Clean up resources
+}
+
+fn onEvent(event: *const @import("sokol").app.Event) void {
+    // Handle input events
+}
 ```
 
-This will generate a folder with a basic starting point for you. See the
-[examples](https://github.com/exastencil/pixelometry/tree/master/examples)
-for examples of how to get started.
+### Configuration Options
 
-If you already have a Ruby2D app, you can simply `require 'pixelometry'`
-right after Ruby2D to get access to the DSL and classes.
+- `title`: Window title (string)
+- `width`: Window width in pixels (i32)
+- `height`: Window height in pixels (i32)
+- `clear_color`: Background color (RGBA values from 0.0 to 1.0)
 
-```ruby
-require 'ruby2d'
-require 'pixelometry' # just add this
-```
+### Callbacks
 
-## Development
+All callbacks are optional:
 
-This gem is currently in development and has not yet been released. Examples
-will be created for all the features, so that is a good indication of progress.
-The following is needed before it will be released:
+- `init_fn`: Called once during initialization
+- `frame_fn`: Called every frame for rendering
+- `cleanup_fn`: Called once during cleanup
+- `event_fn`: Called for input/window events
 
-- Entity Component System (sort of)
-- Scene Management
-- State Serialization
-- Common predefined systems
-  - Isometric Depth-sorted Rendering
-  - Input System
-  - Animation State
-  - Simple Isometric Physics
+## Examples
 
-## Contributing
+See the `examples/` directory for usage examples:
 
-Bug reports and pull requests are welcome on GitHub at
-https://github.com/exastencil/pixelometry. This project is intended to be a
-safe, welcoming space for collaboration, and contributors are expected to
-adhere to the
-[code of conduct](https://github.com/exastencil/pixelometry/blob/master/CODE_OF_CONDUCT.md).
+- `basic.zig` - Shows all callback functions
+- `custom.zig` - Shows minimal usage with custom window size
 
-## License
+## Features
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+- Cross-platform rendering with Sokol
+- Web compilation support
+- Configurable window properties
+- Simple callback-based API
+- Built-in event handling
 
-## Code of Conduct
+## Dependencies
 
-Everyone interacting in the Pixelometry project's codebases, issue trackers,
-chat rooms and mailing lists is expected to follow the
-[code of conduct](https://github.com/exastencil/pixelometry/blob/master/CODE_OF_CONDUCT.md).
+- [sokol-zig](https://github.com/floooh/sokol-zig) - Cross-platform graphics library
