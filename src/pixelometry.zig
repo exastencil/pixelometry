@@ -7,6 +7,45 @@ const slog = sokol.log;
 const clay = @import("zclay");
 const clay_renderer = @import("clay_sokol_renderer.zig");
 
+/// Pixelometry Color type - matches Clay's Color structure
+/// Uses integer components in the range 0-255 for R, G, B, A
+pub const Color = struct {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+
+    /// Create a Color from RGBA values (0-255)
+    pub fn rgba(r: u8, g: u8, b: u8, a: u8) Color {
+        return Color{ .r = r, .g = g, .b = b, .a = a };
+    }
+
+    /// Create a Color from RGB values (0-255) with full alpha
+    pub fn rgb(r: u8, g: u8, b: u8) Color {
+        return Color{ .r = r, .g = g, .b = b, .a = 255 };
+    }
+
+    /// Convert to Clay's Color format (which is [4]f32 in 0-255 range)
+    pub fn toClayColor(self: Color) clay.Color {
+        return .{ @floatFromInt(self.r), @floatFromInt(self.g), @floatFromInt(self.b), @floatFromInt(self.a) };
+    }
+
+    /// Create from Clay's Color format
+    pub fn fromClayColor(clay_color: clay.Color) Color {
+        return Color{ .r = @intFromFloat(clay_color[0]), .g = @intFromFloat(clay_color[1]), .b = @intFromFloat(clay_color[2]), .a = @intFromFloat(clay_color[3]) };
+    }
+
+    /// Convert to normalized float format (0.0-1.0) for GPU rendering
+    pub fn toFloats(self: Color) [4]f32 {
+        return .{
+            @as(f32, @floatFromInt(self.r)) / 255.0,
+            @as(f32, @floatFromInt(self.g)) / 255.0,
+            @as(f32, @floatFromInt(self.b)) / 255.0,
+            @as(f32, @floatFromInt(self.a)) / 255.0,
+        };
+    }
+};
+
 // Re-export Clay for convenience
 pub const Clay = clay;
 

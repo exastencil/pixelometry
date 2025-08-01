@@ -48,10 +48,6 @@ fn frame() void {
 }
 
 fn createLayout() void {
-    const white: clay.Color = .{ 255, 255, 255, 255 };
-    const light_grey: clay.Color = .{ 200, 200, 200, 255 };
-    const blue: clay.Color = .{ 100, 149, 237, 255 };
-
     // Root container
     clay.UI()(.{
         .id = .ID("RootContainer"),
@@ -61,7 +57,7 @@ fn createLayout() void {
             .padding = .all(20),
             .child_gap = 16,
         },
-        .background_color = white,
+        .background_color = .{ 255, 255, 255, 255 },
     })({
         // Header
         clay.UI()(.{
@@ -72,11 +68,11 @@ fn createLayout() void {
                 .padding = .all(16),
                 .child_alignment = .{ .x = .center, .y = .center },
             },
-            .background_color = blue,
+            .background_color = .{ 100, 149, 237, 255 },
         })({
             clay.text("Pixelometry + Clay UI", .{
                 .font_size = 24,
-                .color = white,
+                .color = .{ 0, 0, 0, 255 },
             });
         });
 
@@ -98,7 +94,7 @@ fn createLayout() void {
                     .padding = .all(16),
                     .child_gap = 8,
                 },
-                .background_color = light_grey,
+                .background_color = .{ 200, 200, 200, 255 },
             })({
                 clay.text("Sidebar", .{
                     .font_size = 18,
@@ -120,7 +116,7 @@ fn createLayout() void {
                     .padding = .all(16),
                     .child_gap = 12,
                 },
-                .background_color = light_grey,
+                .background_color = .{ 200, 200, 200, 255 },
             })({
                 clay.text("Main Content Area", .{
                     .font_size = 20,
@@ -129,12 +125,12 @@ fn createLayout() void {
 
                 clay.text("This is a demonstration of Clay UI integration with Pixelometry.", .{
                     .font_size = 14,
-                    .color = .{ 64, 64, 64, 255 },
+                    .color = pxl.Color.rgba(64, 64, 64, 255).toClayColor(),
                 });
 
                 clay.text("Clay provides responsive layout capabilities that will be used for UI anchoring.", .{
                     .font_size = 14,
-                    .color = .{ 64, 64, 64, 255 },
+                    .color = pxl.Color.rgba(64, 64, 64, 255).toClayColor(),
                 });
             });
         });
@@ -142,9 +138,6 @@ fn createLayout() void {
 }
 
 fn sidebarItem(index: u32) void {
-    const orange: clay.Color = .{ 255, 165, 0, 255 };
-    const white: clay.Color = .{ 255, 255, 255, 255 };
-
     clay.UI()(.{
         .id = .IDI("SidebarItem", index),
         .layout = .{
@@ -152,13 +145,13 @@ fn sidebarItem(index: u32) void {
             .padding = .all(8),
             .child_alignment = .{ .x = .left, .y = .center },
         },
-        .background_color = orange,
+        .background_color = .{ 255, 165, 0, 255 },
     })({
         var buffer: [32]u8 = undefined;
         const text = std.fmt.bufPrint(&buffer, "Item {}", .{index + 1}) catch "Item";
         clay.text(text, .{
             .font_size = 14,
-            .color = white,
+            .color = .{ 255, 255, 255, 255 },
         });
     });
 }
@@ -167,10 +160,10 @@ fn cleanup() void {
     if (clay_state) |*state| {
         state.deinit();
     }
-    
+
     // Deinitialize the clay renderer
     clay_renderer.deinitialize();
-    
+
     _ = gpa.deinit();
     std.log.info("Clay example cleaned up!", .{});
 }

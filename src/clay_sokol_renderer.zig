@@ -3,6 +3,7 @@ const sokol = @import("sokol");
 const sg = sokol.gfx;
 const clay = @import("zclay");
 const shader = @import("shader.zig");
+const pxl = @import("pixelometry.zig");
 
 // Matrix type for 4x4 transformation matrix
 const Mat4 = [16]f32;
@@ -134,7 +135,7 @@ pub const SokolRenderer = struct {
     }
 
     /// Add a rectangle to the batch for rendering
-    pub fn drawRect(self: *SokolRenderer, x: f32, y: f32, width: f32, height: f32, color: clay.Color) void {
+    pub fn drawRect(self: *SokolRenderer, x: f32, y: f32, width: f32, height: f32, color: pxl.Color) void {
         // Check if we have space for 4 vertices and 6 indices
         if (self.vertex_count + 4 > self.vertices.len or self.index_count + 6 > self.indices.len) {
             // Flush current batch and reset
@@ -149,14 +150,17 @@ pub const SokolRenderer = struct {
 
         const vertex_start = self.vertex_count;
 
+        // Convert color to float format for GPU
+        const float_color = color.toFloats();
+
         // Add 4 vertices for the rectangle
-        self.vertices[self.vertex_count] = Vertex{ .pos = .{ x1, y1 }, .color = color }; // Top-left
+        self.vertices[self.vertex_count] = Vertex{ .pos = .{ x1, y1 }, .color = float_color }; // Top-left
         self.vertex_count += 1;
-        self.vertices[self.vertex_count] = Vertex{ .pos = .{ x2, y1 }, .color = color }; // Top-right
+        self.vertices[self.vertex_count] = Vertex{ .pos = .{ x2, y1 }, .color = float_color }; // Top-right
         self.vertex_count += 1;
-        self.vertices[self.vertex_count] = Vertex{ .pos = .{ x2, y2 }, .color = color }; // Bottom-right
+        self.vertices[self.vertex_count] = Vertex{ .pos = .{ x2, y2 }, .color = float_color }; // Bottom-right
         self.vertex_count += 1;
-        self.vertices[self.vertex_count] = Vertex{ .pos = .{ x1, y2 }, .color = color }; // Bottom-left
+        self.vertices[self.vertex_count] = Vertex{ .pos = .{ x1, y2 }, .color = float_color }; // Bottom-left
         self.vertex_count += 1;
 
         // Add 6 indices for 2 triangles
@@ -261,19 +265,9 @@ pub const SokolRenderer = struct {
 /// Global renderer instance
 pub var renderer: ?SokolRenderer = null;
 
-/// Convert a clay color to internal color format
-pub fn clayColorToInternal(color: clay.Color) clay.Color {
-    return color; // Clay color is already in the right format (0.0-1.0 floats)
-}
-
-/// Normalize a Clay color from 0-255 range to 0.0-1.0 range
-fn normalizeColor(color: clay.Color) clay.Color {
-    return clay.Color{
-        color[0] / 255.0,
-        color[1] / 255.0,
-        color[2] / 255.0,
-        color[3] / 255.0,
-    };
+/// Convert a clay color to pxl.Color format
+pub fn clayColorToPxlColor(color: clay.Color) pxl.Color {
+    return pxl.Color.fromClayColor(color);
 }
 
 /// Callback for clay to get the dimensions of text data
@@ -361,19 +355,19 @@ pub fn render(render_commands: []clay.RenderCommand) void {
             .rectangle => {
                 // Get the actual background color from the render data
                 const rect_data = command.render_data.rectangle;
-                const color = normalizeColor(rect_data.background_color);
+                const color = clayColorToPxlColor(rect_data.background_color);
                 sokol_renderer.drawRect(bbox.x, bbox.y, bbox.width, bbox.height, color);
             },
 
             .text => {
                 // Use default colors for now since config access is not available
-                const bg_color = clay.Color{ 0.2, 0.2, 0.2, 1.0 }; // Dark gray for text background
+                const bg_color = pxl.Color.rgba(51, 51, 51, 255); // Dark gray for text background
                 sokol_renderer.drawRect(bbox.x, bbox.y, bbox.width, bbox.height, bg_color);
             },
 
             .image => {
                 // Placeholder for image rendering
-                const color = clay.Color{ 0.5, 0.5, 0.5, 1.0 };
+                const color = pxl.Color.rgba(128, 128, 128, 255);
                 sokol_renderer.drawRect(bbox.x, bbox.y, bbox.width, bbox.height, color);
             },
 
@@ -388,7 +382,7 @@ pub fn render(render_commands: []clay.RenderCommand) void {
             .border => {
                 // Get the actual border data from the render command
                 const border_data = command.render_data.border;
-                const color = normalizeColor(border_data.color);
+                const color = clayColorToPxlColor(border_data.color);
 
                 // Use actual border widths from the data
                 const top_width = @as(f32, @floatFromInt(border_data.width.top));
