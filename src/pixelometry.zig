@@ -4,6 +4,86 @@ const sg = sokol.gfx;
 const sapp = sokol.app;
 const sglue = sokol.glue;
 const slog = sokol.log;
+const clay = @import("zclay");
+const clay_renderer = @import("clay_sokol_renderer.zig");
+
+// Re-export Clay for convenience
+pub const Clay = clay;
+
+/// Clay UI integration state
+pub const ClayState = struct {
+    arena: clay.Arena,
+    memory: []u8,
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator, screen_width: f32, screen_height: f32) !ClayState {
+        const min_memory_size: u32 = clay.minMemorySize();
+        const memory = try allocator.alloc(u8, min_memory_size);
+        const arena = clay.createArenaWithCapacityAndMemory(memory);
+
+        _ = clay.initialize(arena, .{ .w = screen_width, .h = screen_height }, .{});
+        clay.setMeasureTextFunction(void, {}, measureText);
+
+        return ClayState{
+            .arena = arena,
+            .memory = memory,
+            .allocator = allocator,
+        };
+    }
+
+    pub fn deinit(self: *ClayState) void {
+        self.allocator.free(self.memory);
+    }
+
+    pub fn beginLayout(self: *ClayState) void {
+        _ = self;
+        clay.beginLayout();
+    }
+
+    pub fn endLayout(self: *ClayState) []clay.RenderCommand {
+        _ = self;
+        return clay.endLayout();
+    }
+
+    pub fn setPointerState(self: *ClayState, x: f32, y: f32, mouse_down: bool) void {
+        _ = self;
+        clay.setPointerState(.{ .x = x, .y = y }, mouse_down);
+    }
+};
+
+// Basic text measurement function for Clay
+fn measureText(clay_text: []const u8, config: *clay.TextElementConfig, user_data: void) clay.Dimensions {
+    _ = user_data;
+
+    // Simple text measurement - this should be replaced with proper font measurement
+    const char_width = @as(f32, @floatFromInt(config.font_size)) * 0.6; // Approximate character width
+    const char_height = @as(f32, @floatFromInt(config.font_size));
+
+    return .{
+        .w = char_width * @as(f32, @floatFromInt(clay_text.len)),
+        .h = char_height,
+    };
+}
+
+/// Generic renderer for Pixelometry that handles both UI and scene rendering
+/// Conforms to Clay's rendering API but can be extended for scene rendering
+pub const Renderer = struct {
+    screen_width: f32,
+    screen_height: f32,
+
+    pub fn init(screen_width: f32, screen_height: f32) Renderer {
+        return Renderer{
+            .screen_width = screen_width,
+            .screen_height = screen_height,
+        };
+    }
+
+    /// Render Clay's render commands using the Sokol renderer
+    pub fn renderClayCommands(self: *Renderer, render_commands: []clay.RenderCommand) void {
+        _ = self; // Not needed since we use the global clay_renderer
+        clay_renderer.render(render_commands);
+    }
+};
 
 /// Configuration for a Pixelometry application
 ///

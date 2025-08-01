@@ -14,5 +14,13 @@
             .url = "git+https://github.com/floooh/sokol-zig.git#c18be7b9668f05a84c918db0813c970025480fd9",
             .hash = "sokol-0.1.0-pb1HK42WLQCphk4zdd8fVfw5COyd95iN4-abmBhlt87J",
         },
+        .zclay = .{
+            .url = "git+https://github.com/johan0A/clay-zig-bindings.git?ref=v0.2.1+0.14#37110b6e0ed3de44fb7e9f9c2744a1837d8b84cc",
+            .hash = "zclay-0.2.0-Ej1rkNXJAAAI8utSJxUNPY5EybD7bjgbcx7pPjN_atKC",
+        },
+        .sokol_tools = .{
+            .url = "git+https://github.com/floooh/sokol-tools-bin.git#c240bd1d17d4192572ee6e0cdb6e2477e4a7df80",
+            .hash = "sokolshdc-0.1.0-r2KZDj7gkwRMQjYMiLigcvLi1O1jSnBGeA9qlLen4Rfz",
+        },
     },
 }

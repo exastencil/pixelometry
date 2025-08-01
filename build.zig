@@ -14,6 +14,15 @@ pub fn build(b: *Build) !void {
         .target = target,
         .optimize = optimize,
     });
+    const dep_zclay = b.dependency("zclay", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const dep_sokol_tools = b.dependency("sokol_tools", .{});
+
+    // Compile shaders
+    const shader_step = compileShaders(b, dep_sokol_tools);
+
     // Create the pixelometry library module
     const mod_pixelometry = b.createModule(.{
         .root_source_file = b.path("src/pixelometry.zig"),
@@ -21,6 +30,7 @@ pub fn build(b: *Build) !void {
         .optimize = optimize,
         .imports = &.{
             .{ .name = "sokol", .module = dep_sokol.module("sokol") },
+            .{ .name = "zclay", .module = dep_zclay.module("zclay") },
         },
     });
 
@@ -29,12 +39,13 @@ pub fn build(b: *Build) !void {
         .name = "pixelometry",
         .root_module = mod_pixelometry,
     });
+    lib.step.dependOn(shader_step);
     b.installArtifact(lib);
 
     // Create examples
     const examples = [_]struct { name: []const u8, file: []const u8 }{
         .{ .name = "basic", .file = "examples/basic.zig" },
-        .{ .name = "custom", .file = "examples/custom.zig" },
+        .{ .name = "clay", .file = "examples/clay.zig" },
     };
 
     // Default example (basic)
@@ -118,4 +129,22 @@ fn buildWeb(b: *Build, opts: Options) !void {
     const run = sokol.emRunStep(b, .{ .name = "pixelometry", .emsdk = emsdk });
     run.step.dependOn(&link_step.step);
     b.step("run", "Run pixelometry").dependOn(&run.step);
+}
+
+// Compile shaders using sokol-shdc
+fn compileShaders(b: *Build, dep_sokol_tools: *Build.Dependency) *Build.Step {
+    const shdc_step = b.step("shaders", "Compile shaders");
+
+    // Compile pixel.glsl shader using precompiled sokol-shdc binary
+    const shdc_binary_path = dep_sokol_tools.path("bin/osx/sokol-shdc").getPath(b);
+    const shdc_cmd = b.addSystemCommand(&.{shdc_binary_path});
+    shdc_cmd.addArgs(&.{
+        "--input",  "shaders/pixel.glsl",
+        "--output", "src/shader.zig",
+        "--slang",  "glsl410:hlsl5:metal_macos",
+        "--format", "sokol_zig",
+    });
+
+    shdc_step.dependOn(&shdc_cmd.step);
+    return shdc_step;
 }
