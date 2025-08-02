@@ -2,6 +2,16 @@ const std = @import("std");
 const pxl = @import("pixelometry");
 const ui = pxl.UI;
 
+pub fn main() void {
+    pxl.runApp(.{
+        .title = "Pixelometry UI Example",
+        .width = 800,
+        .height = 600,
+    }, .{
+        .frame_fn = frame,
+    });
+}
+
 fn frame() void {
     // Root container
     ui.UI()(.{
@@ -12,7 +22,7 @@ fn frame() void {
             .padding = .all(20),
             .child_gap = 16,
         },
-        .background_color = .{ 0, 0, 0, 0 },
+        .background_color = .{ 255, 255, 255, 255 },
     })({
         // Header
         ui.UI()(.{
@@ -108,15 +118,5 @@ fn sidebarItem(index: u32) void {
             .font_size = 14,
             .color = .{ 255, 255, 255, 255 },
         });
-    });
-}
-
-pub fn main() void {
-    pxl.runApp(.{
-        .title = "Pixelometry UI Example",
-        .width = 800,
-        .height = 600,
-    }, .{
-        .frame_fn = frame,
     });
 }

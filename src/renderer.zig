@@ -126,7 +126,7 @@ pub const Renderer = struct {
             .screen_height = screen_height,
             .target_width = target_width,
             .target_height = target_height,
-            .canvas_width = target_height,
+            .canvas_width = target_width,
             .canvas_height = target_height,
             .shader_program = shd,
             .vertex_buffer = vbuf,
@@ -149,11 +149,36 @@ pub const Renderer = struct {
             self.flushBatch();
         }
 
-        // Convert screen coordinates directly to NDC to bypass matrix issues
-        const x1 = (x * 2.0 / self.screen_width) - 1.0;
-        const y1 = 1.0 - (y * 2.0 / self.screen_height); // Y-flip for top-left origin
-        const x2 = ((x + width) * 2.0 / self.screen_width) - 1.0;
-        const y2 = 1.0 - ((y + height) * 2.0 / self.screen_height);
+        // Convert canvas coordinates directly to NDC to bypass matrix issues
+        const canvas_width = @as(f32, @floatFromInt(self.canvas_width));
+        const canvas_height = @as(f32, @floatFromInt(self.canvas_height));
+        const canvas_aspect = canvas_width / canvas_height;
+
+        const aspect_ratio = self.screen_width / self.screen_height;
+        const height_constrained = aspect_ratio > canvas_aspect;
+        const width_constrained = aspect_ratio < canvas_aspect;
+
+        // Move it right to center the canvas if needed
+        var banding_width_ratio: f32 = 0.0;
+        if (height_constrained) {
+            // Proportion of width that needs to be black bars
+            // since NDC runs from -1 to 1 (so 2) we don't need to halve it
+            // even though we are only offsetting the left side
+            banding_width_ratio = (aspect_ratio - canvas_aspect) / aspect_ratio;
+        }
+        // Move it down to center the canvas if needed
+        var banding_height_ratio: f32 = 0.0;
+        if (width_constrained) {
+            // Proportion of height that needs to be black bars
+            // since NDC runs from -1 to 1 (so 2) we don't need to halve it
+            // even though we are only offsetting the top side
+            banding_height_ratio = (canvas_aspect - aspect_ratio) / canvas_aspect;
+        }
+
+        const x1 = (1.0 - banding_width_ratio) * ((x * 2.0 / canvas_width) - 1.0);
+        const x2 = (1.0 - banding_width_ratio) * (((x + width) * 2.0 / canvas_width) - 1.0);
+        const y1 = (1.0 - banding_height_ratio) * (1.0 - (y / canvas_height * 2.0));
+        const y2 = (1.0 - banding_height_ratio) * (1.0 - ((y + height) / canvas_height * 2.0));
 
         const vertex_start = self.vertex_count;
 
@@ -410,10 +435,16 @@ pub fn setPointerState(x: f32, y: f32, mouse_down: bool) void {
 /// Update screen dimensions when window is resized
 pub fn updateScreenSize(width: f32, height: f32) void {
     if (renderer) |*r| {
+        // Update screen size to calculate canvas size
         r.updateScreenSize(width, height);
-    }
-    if (clay_state) |*state| {
-        state.updateLayoutDimensions(width, height);
+
+        // Pass canvas size to layout engine
+        if (clay_state) |*state| {
+            state.updateLayoutDimensions(
+                @as(f32, @floatFromInt(r.canvas_width)),
+                @as(f32, @floatFromInt(r.canvas_height)),
+            );
+        }
     }
 }
 
@@ -433,6 +464,13 @@ pub fn renderUI(render_commands: []clay.RenderCommand) void {
     if (renderer == null) {
         return;
     }
+
+    // std.log.debug("Screen: {d}x{d} Canvas: {d}x{d}", .{
+    //     renderer.?.screen_width,
+    //     renderer.?.screen_height,
+    //     renderer.?.canvas_width,
+    //     renderer.?.canvas_height,
+    // });
 
     var sokol_renderer = &renderer.?;
 
