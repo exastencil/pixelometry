@@ -22,5 +22,9 @@
             .url = "git+https://github.com/floooh/sokol-tools-bin.git#c240bd1d17d4192572ee6e0cdb6e2477e4a7df80",
             .hash = "sokolshdc-0.1.0-r2KZDj7gkwRMQjYMiLigcvLi1O1jSnBGeA9qlLen4Rfz",
         },
+        .zigimg = .{
+            .url = "git+https://github.com/zigimg/zigimg.git#b1c5beea3b200a949fe7edf15ba8317cb9253efe",
+            .hash = "zigimg-0.1.0-8_eo2lrXEgBlEihqJdiw_ZtxgL-vO72ajJpmOdO59qxp",
+        },
     },
 }

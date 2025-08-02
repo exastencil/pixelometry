@@ -3,6 +3,8 @@ const sokol = @import("sokol");
 const sg = sokol.gfx;
 const clay = @import("zclay");
 const shader = @import("shader.zig");
+const text_shader = @import("text_shader.zig");
+const Font = @import("font.zig").Font;
 
 // Matrix type for 4x4 transformation matrix
 const Mat4 = [16]f32;
@@ -52,6 +54,13 @@ pub const Vertex = struct {
     color: [4]f32,
 };
 
+/// Textured vertex structure for text rendering
+pub const TextVertex = struct {
+    pos: [2]f32,
+    texcoord: [2]f32,
+    color: [4]f32,
+};
+
 /// Sokol-backed Renderer for Pixelometry
 pub const Renderer = struct {
     // Screen dimensions
@@ -63,22 +72,32 @@ pub const Renderer = struct {
     // Canvas dimensions
     canvas_width: i32,
     canvas_height: i32,
-    // GPU resources
+    // GPU resources for solid color rendering
     shader_program: sg.Shader,
     vertex_buffer: sg.Buffer,
     index_buffer: sg.Buffer,
     pipeline: sg.Pipeline,
+    // GPU resources for text rendering
+    text_shader_program: sg.Shader,
+    text_vertex_buffer: sg.Buffer,
+    text_index_buffer: sg.Buffer,
+    text_pipeline: sg.Pipeline,
     // Vertex data staging
     vertices: [1024]Vertex, // Static buffer for vertices
     indices: [1536]u16, // Static buffer for indices (6 per rectangle: 2 triangles)
     vertex_count: u32,
     index_count: u32,
+    // Text vertex data staging
+    text_vertices: [1024]TextVertex, // Static buffer for text vertices
+    text_indices: [1536]u16, // Static buffer for text indices
+    text_vertex_count: u32,
+    text_index_count: u32,
     // Current scissor state
     scissor_active: bool,
     scissor_rect: struct { x: i32, y: i32, w: i32, h: i32 },
 
     pub fn init(target_width: i32, target_height: i32) Renderer {
-        // Create shader
+        // Create solid color shader
         const shd = sg.makeShader(shader.pixelShaderDesc(sg.queryBackend()));
 
         // Create vertex buffer (dynamic for UI rendering)
@@ -117,6 +136,46 @@ pub const Renderer = struct {
             .label = "pipeline",
         });
 
+        // Create text shader
+        const text_shd = sg.makeShader(text_shader.textShaderDesc(sg.queryBackend()));
+
+        // Create text vertex buffer
+        const text_vbuf = sg.makeBuffer(.{
+            .size = @sizeOf(TextVertex) * 1024,
+            .usage = .{ .vertex_buffer = true, .stream_update = true },
+            .label = "text_vertices",
+        });
+
+        // Create text index buffer
+        const text_ibuf = sg.makeBuffer(.{
+            .size = @sizeOf(u16) * 1536,
+            .usage = .{ .index_buffer = true, .stream_update = true },
+            .label = "text_indices",
+        });
+
+        // Create text rendering pipeline
+        var text_layout: sg.VertexLayoutState = .{};
+        text_layout.attrs[0] = .{ .format = .FLOAT2 }; // position
+        text_layout.attrs[1] = .{ .format = .FLOAT2 }; // texcoord
+        text_layout.attrs[2] = .{ .format = .FLOAT4 }; // color
+
+        const text_pip = sg.makePipeline(.{
+            .shader = text_shd,
+            .layout = text_layout,
+            .index_type = .UINT16,
+            .cull_mode = .NONE,
+            .color_count = 1,
+            .colors = .{
+                .{ .blend = .{
+                    .enabled = true,
+                    .src_factor_rgb = .SRC_ALPHA,
+                    .dst_factor_rgb = .ONE_MINUS_SRC_ALPHA,
+                } },
+                .{}, .{}, .{}, // Fill remaining slots
+            },
+            .label = "text_pipeline",
+        });
+
         // Calculate dimensions
         const screen_width = @as(f32, @floatFromInt(target_width));
         const screen_height = @as(f32, @floatFromInt(target_height));
@@ -132,10 +191,18 @@ pub const Renderer = struct {
             .vertex_buffer = vbuf,
             .index_buffer = ibuf,
             .pipeline = pip,
+            .text_shader_program = text_shd,
+            .text_vertex_buffer = text_vbuf,
+            .text_index_buffer = text_ibuf,
+            .text_pipeline = text_pip,
             .vertices = undefined,
             .indices = undefined,
             .vertex_count = 0,
             .index_count = 0,
+            .text_vertices = undefined,
+            .text_indices = undefined,
+            .text_vertex_count = 0,
+            .text_index_count = 0,
             .scissor_active = false,
             .scissor_rect = .{ .x = 0, .y = 0, .w = 0, .h = 0 },
         };
@@ -265,6 +332,175 @@ pub const Renderer = struct {
         self.index_count = 0;
     }
 
+    /// Flush the current batch of text vertices to GPU
+    pub fn flushTextBatch(self: *Renderer, font: *Font) void {
+        if (self.text_vertex_count == 0) return;
+
+        // Update text vertex buffer
+        sg.updateBuffer(self.text_vertex_buffer, sg.asRange(self.text_vertices[0..self.text_vertex_count]));
+
+        // Update text index buffer
+        sg.updateBuffer(self.text_index_buffer, sg.asRange(self.text_indices[0..self.text_index_count]));
+
+        // Use identity matrix since we're doing coordinate conversion manually
+        var proj_matrix = Mat4{
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        };
+
+        // For D3D11/HLSL, we need to transpose the matrix because it uses row-major layout
+        const backend = sg.queryBackend();
+        if (backend == .D3D11) {
+            proj_matrix = transposeMatrix(proj_matrix);
+        }
+
+        const vs_params = .{ .mvp = proj_matrix };
+
+        // Apply text pipeline and render
+        sg.applyPipeline(self.text_pipeline);
+        var bindings: sg.Bindings = .{};
+        bindings.vertex_buffers[0] = self.text_vertex_buffer;
+        bindings.index_buffer = self.text_index_buffer;
+        bindings.images[0] = font.texture; // Bind font texture
+        bindings.samplers[0] = font.sampler; // Bind font sampler
+        sg.applyBindings(bindings);
+        sg.applyUniforms(text_shader.UB_vs_params, sg.asRange(&vs_params));
+
+        // Apply scissor if active
+        if (self.scissor_active) {
+            sg.applyScissorRect(self.scissor_rect.x, self.scissor_rect.y, self.scissor_rect.w, self.scissor_rect.h, true);
+        }
+
+        // Draw indexed triangles
+        sg.draw(0, @intCast(self.text_index_count), 1);
+
+        // Reset scissor if it was active
+        if (self.scissor_active) {
+            sg.applyScissorRect(0, 0, 0, 0, false);
+        }
+
+        // Reset text batch
+        self.text_vertex_count = 0;
+        self.text_index_count = 0;
+    }
+
+    /// Render text using the provided font with proper texture mapping
+    pub fn drawTexturedText(self: *Renderer, text: []const u8, x: f32, y: f32, font: *Font, color: Color) void {
+        var cursor_x = x;
+        const cursor_y = y;
+
+        // Get font texture dimensions
+        const font_texture_width = @as(f32, @floatFromInt(font.image_width));
+        const font_texture_height = @as(f32, @floatFromInt(font.image_height));
+
+        // Iterate through each UTF-8 character
+        var utf8_view = std.unicode.Utf8View.init(text) catch return;
+        var utf8_iterator = utf8_view.iterator();
+
+        while (utf8_iterator.nextCodepoint()) |codepoint| {
+            if (font.getChar(codepoint)) |char_info| {
+                // Check if we have space for 4 vertices and 6 indices
+                if (self.text_vertex_count + 4 > self.text_vertices.len or self.text_index_count + 6 > self.text_indices.len) {
+                    // Flush current text batch and reset
+                    self.flushTextBatch(font);
+                }
+
+                const char_width = @as(f32, @floatFromInt(char_info.width));
+                const char_height = @as(f32, @floatFromInt(char_info.height));
+                const char_x = @as(f32, @floatFromInt(char_info.x));
+                const char_y = @as(f32, @floatFromInt(char_info.y));
+
+                // Calculate UV coordinates for the character in the font texture
+                const uv_x1 = char_x / font_texture_width;
+                const uv_x2 = (char_x + char_width) / font_texture_width;
+                const uv_y1 = char_y / font_texture_height;
+                const uv_y2 = (char_y + char_height) / font_texture_height;
+
+                // Convert canvas coordinates to NDC (same logic as drawRect)
+                const canvas_width = @as(f32, @floatFromInt(self.canvas_width));
+                const canvas_height = @as(f32, @floatFromInt(self.canvas_height));
+                const canvas_aspect = canvas_width / canvas_height;
+
+                const aspect_ratio = self.screen_width / self.screen_height;
+                const height_constrained = aspect_ratio > canvas_aspect;
+                const width_constrained = aspect_ratio < canvas_aspect;
+
+                var banding_width_ratio: f32 = 0.0;
+                if (height_constrained) {
+                    banding_width_ratio = (aspect_ratio - canvas_aspect) / aspect_ratio;
+                }
+                var banding_height_ratio: f32 = 0.0;
+                if (width_constrained) {
+                    banding_height_ratio = (canvas_aspect - aspect_ratio) / canvas_aspect;
+                }
+
+                const x1 = (1.0 - banding_width_ratio) * ((cursor_x * 2.0 / canvas_width) - 1.0);
+                const x2 = (1.0 - banding_width_ratio) * (((cursor_x + char_width) * 2.0 / canvas_width) - 1.0);
+                const y1 = (1.0 - banding_height_ratio) * (1.0 - (cursor_y / canvas_height * 2.0));
+                const y2 = (1.0 - banding_height_ratio) * (1.0 - ((cursor_y + char_height) / canvas_height * 2.0));
+
+                const vertex_start = self.text_vertex_count;
+                const float_color = color.toFloats();
+
+                // Add 4 vertices for the character quad
+                self.text_vertices[self.text_vertex_count] = TextVertex{ .pos = .{ x1, y1 }, .texcoord = .{ uv_x1, uv_y1 }, .color = float_color }; // Top-left
+                self.text_vertex_count += 1;
+                self.text_vertices[self.text_vertex_count] = TextVertex{ .pos = .{ x2, y1 }, .texcoord = .{ uv_x2, uv_y1 }, .color = float_color }; // Top-right
+                self.text_vertex_count += 1;
+                self.text_vertices[self.text_vertex_count] = TextVertex{ .pos = .{ x2, y2 }, .texcoord = .{ uv_x2, uv_y2 }, .color = float_color }; // Bottom-right
+                self.text_vertex_count += 1;
+                self.text_vertices[self.text_vertex_count] = TextVertex{ .pos = .{ x1, y2 }, .texcoord = .{ uv_x1, uv_y2 }, .color = float_color }; // Bottom-left
+                self.text_vertex_count += 1;
+
+                // Add 6 indices for 2 triangles
+                const base_idx: u16 = @intCast(vertex_start);
+                self.text_indices[self.text_index_count] = base_idx + 0;
+                self.text_index_count += 1;
+                self.text_indices[self.text_index_count] = base_idx + 1;
+                self.text_index_count += 1;
+                self.text_indices[self.text_index_count] = base_idx + 2;
+                self.text_index_count += 1;
+
+                self.text_indices[self.text_index_count] = base_idx + 0;
+                self.text_index_count += 1;
+                self.text_indices[self.text_index_count] = base_idx + 2;
+                self.text_index_count += 1;
+                self.text_indices[self.text_index_count] = base_idx + 3;
+                self.text_index_count += 1;
+
+                cursor_x += char_width;
+            }
+        }
+    }
+
+    /// Render text using the provided font (fallback to rectangles if no texture support)
+    pub fn drawText(self: *Renderer, text: []const u8, x: f32, y: f32, font: *Font, color: Color) void {
+        // For now, use the textured version if font has a valid texture
+        if (font.texture.id != 0) {
+            self.drawTexturedText(text, x, y, font, color);
+        } else {
+            // Fallback to colored rectangles
+            std.log.debug("Rendering text using colored rectangles: '{s}'", .{text});
+            var cursor_x = x;
+            const cursor_y = y;
+
+            var utf8_view = std.unicode.Utf8View.init(text) catch return;
+            var utf8_iterator = utf8_view.iterator();
+
+            while (utf8_iterator.nextCodepoint()) |codepoint| {
+                if (font.getChar(codepoint)) |char_info| {
+                    const char_width = @as(f32, @floatFromInt(char_info.width));
+                    const char_height = @as(f32, @floatFromInt(char_info.height));
+
+                    self.drawRect(cursor_x, cursor_y, char_width, char_height, color);
+                    cursor_x += char_width;
+                }
+            }
+        }
+    }
+
     /// Start scissor mode
     pub fn beginScissor(self: *Renderer, x: f32, y: f32, width: f32, height: f32) void {
         // Flush current batch before changing scissor state
@@ -291,6 +527,18 @@ pub const Renderer = struct {
     /// Called at the end of frame to ensure all batched data is rendered
     pub fn finishFrame(self: *Renderer) void {
         self.flushBatch();
+
+        // Flush any remaining text batches if we have a current font
+        if (current_font) |font| {
+            if (font.texture.id != 0) {
+                self.flushTextBatch(font);
+            }
+        }
+    }
+
+    /// Finish rendering any pending text with the given font
+    pub fn finishTextFrame(self: *Renderer, font: *Font) void {
+        self.flushTextBatch(font);
     }
 
     /// Update screen dimensions (call when window is resized)
@@ -339,6 +587,7 @@ fn transposeMatrix(m: Mat4) Mat4 {
 // Global renderer instance and Clay state
 pub var renderer: ?Renderer = null;
 pub var clay_state: ?ClayState = null;
+pub var current_font: ?*@import("font.zig").Font = null;
 
 /// Initialize the renderer with Clay UI system
 pub fn init(allocator: std.mem.Allocator, screen_width: f32, screen_height: f32) !void {
@@ -402,14 +651,29 @@ const ClayState = struct {
 fn measureText(clay_text: []const u8, config: *clay.TextElementConfig, user_data: void) clay.Dimensions {
     _ = user_data;
 
-    // Simple text measurement - this should be replaced with proper font measurement
-    const char_width = @as(f32, @floatFromInt(config.font_size)) * 0.6; // Approximate character width
-    const char_height = @as(f32, @floatFromInt(config.font_size));
+    // Use the current font if available, otherwise fall back to approximation
+    if (current_font) |font| {
+        const font_width = font.measureText(clay_text);
+        const font_height = font.getHeight();
 
-    return .{
-        .w = char_width * @as(f32, @floatFromInt(clay_text.len)),
-        .h = char_height,
-    };
+        // Scale based on font_size if needed (assuming the font is designed for a specific size)
+        // For now, assume the font is 12px (height of terminus) and scale accordingly
+        const scale_factor = @as(f32, @floatFromInt(config.font_size)) / 12.0;
+
+        return .{
+            .w = font_width * scale_factor,
+            .h = font_height * scale_factor,
+        };
+    } else {
+        // Fallback to simple approximation
+        const char_width = @as(f32, @floatFromInt(config.font_size)) * 0.6;
+        const char_height = @as(f32, @floatFromInt(config.font_size));
+
+        return .{
+            .w = char_width * @as(f32, @floatFromInt(clay_text.len)),
+            .h = char_height,
+        };
+    }
 }
 
 /// Convert a clay color to Color format
@@ -430,6 +694,11 @@ pub fn setPointerState(x: f32, y: f32, mouse_down: bool) void {
     if (clay_state) |*state| {
         state.setPointerState(x, y, mouse_down);
     }
+}
+
+/// Set the current font for text measurement
+pub fn setFont(font: ?*@import("font.zig").Font) void {
+    current_font = font;
 }
 
 /// Update screen dimensions when window is resized
@@ -488,9 +757,22 @@ pub fn renderUI(render_commands: []clay.RenderCommand) void {
             },
 
             .text => {
-                // Use default colors for now since config access is not available
-                const bg_color = Color.rgba(51, 51, 51, 255); // Dark gray for text background
-                sokol_renderer.drawRect(bbox.x, bbox.y, bbox.width, bbox.height, bg_color);
+                // Get the text render data from the render command
+                const text_data = command.render_data.text;
+
+                // Extract the text string from Clay's StringSlice
+                const text_string = text_data.string_contents.chars[0..@intCast(text_data.string_contents.length)];
+
+                // Convert the Clay color to our Color format
+                const text_color = clayColorToColor(text_data.text_color);
+
+                // Render the actual text if we have a font, otherwise fall back to rectangle
+                if (current_font) |font| {
+                    sokol_renderer.drawText(text_string, bbox.x, bbox.y, font, text_color);
+                } else {
+                    // Fallback to gray rectangle when no font is available
+                    sokol_renderer.drawRect(bbox.x, bbox.y, bbox.width, bbox.height, Color.rgba(100, 100, 100, 255));
+                }
             },
 
             .image => {

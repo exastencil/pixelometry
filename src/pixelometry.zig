@@ -6,10 +6,18 @@ const sglue = sokol.glue;
 const slog = sokol.log;
 const clay = @import("zclay");
 const renderer = @import("renderer.zig");
+const font = @import("font.zig");
 
 // Re-export renderer and Color for convenience
 pub const Renderer = renderer;
 pub const Color = renderer.Color;
+
+// Re-export Font for convenience
+pub const Font = font.Font;
+pub const CharInfo = font.CharInfo;
+pub const createASCIIFont = font.createASCIIFont;
+pub const createDummyASCIIFont = font.createDummyASCIIFont;
+pub const setFont = renderer.setFont;
 
 // Re-export Clay as UI for convenience
 pub const UI = clay;

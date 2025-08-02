@@ -18,6 +18,10 @@ pub fn build(b: *Build) !void {
         .target = target,
         .optimize = optimize,
     });
+    const dep_zigimg = b.dependency("zigimg", .{
+        .target = target,
+        .optimize = optimize,
+    });
     const dep_sokol_tools = b.dependency("sokol_tools", .{});
 
     // Compile shaders
@@ -31,8 +35,12 @@ pub fn build(b: *Build) !void {
         .imports = &.{
             .{ .name = "sokol", .module = dep_sokol.module("sokol") },
             .{ .name = "zclay", .module = dep_zclay.module("zclay") },
+            .{ .name = "zigimg", .module = dep_zigimg.module("zigimg") },
         },
     });
+
+    // Add C include path for stb_image
+    mod_pixelometry.addIncludePath(b.path("src/c"));
 
     // Build and install the pixelometry library as the default build step
     const lib = b.addStaticLibrary(.{
@@ -137,14 +145,24 @@ fn compileShaders(b: *Build, dep_sokol_tools: *Build.Dependency) *Build.Step {
 
     // Compile pixel.glsl shader using precompiled sokol-shdc binary
     const shdc_binary_path = dep_sokol_tools.path("bin/osx/sokol-shdc").getPath(b);
-    const shdc_cmd = b.addSystemCommand(&.{shdc_binary_path});
-    shdc_cmd.addArgs(&.{
+    const pixel_shader_cmd = b.addSystemCommand(&.{shdc_binary_path});
+    pixel_shader_cmd.addArgs(&.{
         "--input",  "shaders/pixel.glsl",
         "--output", "src/shader.zig",
         "--slang",  "glsl410:hlsl5:metal_macos",
         "--format", "sokol_zig",
     });
 
-    shdc_step.dependOn(&shdc_cmd.step);
+    // Compile text.glsl shader using precompiled sokol-shdc binary
+    const text_shader_cmd = b.addSystemCommand(&.{shdc_binary_path});
+    text_shader_cmd.addArgs(&.{
+        "--input",  "shaders/text.glsl",
+        "--output", "src/text_shader.zig",
+        "--slang",  "glsl410:hlsl5:metal_macos",
+        "--format", "sokol_zig",
+    });
+
+    shdc_step.dependOn(&pixel_shader_cmd.step);
+    shdc_step.dependOn(&text_shader_cmd.step);
     return shdc_step;
 }
