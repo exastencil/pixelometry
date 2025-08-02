@@ -271,22 +271,28 @@ fn transposeMatrix(m: Mat4) Mat4 {
     };
 }
 
-// Global renderer instance
+// Global renderer instance and Clay state
 pub var renderer: ?Renderer = null;
+pub var clay_state: ?ClayState = null;
 
-/// Initialize the renderer
+/// Initialize the renderer with Clay UI system
 pub fn initialize(screen_width: f32, screen_height: f32, allocator: std.mem.Allocator) !void {
-    _ = allocator; // Currently unused but kept for future font/resource management
     renderer = Renderer.init(screen_width, screen_height);
+    clay_state = try ClayState.init(allocator, screen_width, screen_height);
 }
 
 /// Cleanup resources
+/// Note: Sokol resources are automatically cleaned up when sg.shutdown() is called
 pub fn deinitialize() void {
-    // Note: Sokol resources are automatically cleaned up when sg.shutdown() is called
+    if (clay_state) |*state| {
+        state.deinit();
+        clay_state = null;
+    }
+    renderer = null;
 }
 
 /// Clay UI integration state
-pub const ClayState = struct {
+const ClayState = struct {
     arena: clay.Arena,
     memory: []u8,
     allocator: std.mem.Allocator,
@@ -308,11 +314,6 @@ pub const ClayState = struct {
 
     pub fn deinit(self: *ClayState) void {
         self.allocator.free(self.memory);
-    }
-
-    pub fn beginLayout(self: *ClayState) void {
-        _ = self;
-        clay.beginLayout();
     }
 
     pub fn endLayout(self: *ClayState) []clay.RenderCommand {
@@ -343,6 +344,32 @@ fn measureText(clay_text: []const u8, config: *clay.TextElementConfig, user_data
 /// Convert a clay color to Color format
 pub fn clayColorToColor(color: clay.Color) Color {
     return Color.fromClayColor(color);
+}
+
+/// End UI layout and render - convenience wrapper
+pub fn endLayout() void {
+    if (clay_state) |*state| {
+        const render_commands = state.endLayout();
+        renderUI(render_commands);
+    }
+}
+
+/// Set pointer/mouse state - convenience wrapper
+pub fn setPointerState(x: f32, y: f32, mouse_down: bool) void {
+    if (clay_state) |*state| {
+        state.setPointerState(x, y, mouse_down);
+    }
+}
+
+/// Renders a frame, ensuring UI layout calls are observerd and rendered last
+pub fn renderFrame(frame_fn: ?*const fn () void) void {
+    clay.beginLayout();
+    if (frame_fn) |callable| {
+        callable();
+    }
+    if (clay_state) |*state| {
+        renderUI(state.endLayout());
+    }
 }
 
 /// Handle rendering a clay command array

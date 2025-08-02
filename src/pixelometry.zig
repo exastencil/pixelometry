@@ -7,10 +7,9 @@ const slog = sokol.log;
 const clay = @import("zclay");
 const renderer = @import("renderer.zig");
 
-// Re-export renderer, Color, and ClayState for convenience
+// Re-export renderer and Color for convenience
 pub const Renderer = renderer;
 pub const Color = renderer.Color;
-pub const ClayState = renderer.ClayState;
 
 // Re-export Clay as UI for convenience
 pub const UI = clay;
@@ -135,11 +134,7 @@ export fn appFrame() void {
         });
 
         // Call function callback if available, otherwise call method
-        if (current_callbacks.frame_fn) |frame_fn| {
-            frame_fn();
-        } else {
-            app.onFrame();
-        }
+        renderer.renderFrame(current_callbacks.frame_fn);
 
         sg.endPass();
         sg.commit();

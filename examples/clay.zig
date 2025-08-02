@@ -3,20 +3,12 @@ const pxl = @import("pixelometry");
 const ui = pxl.UI;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-var clay_state: ?pxl.ClayState = null;
-
 fn init() void {
     const allocator = gpa.allocator();
 
-    // Initialize the renderer
+    // Initialize the renderer with integrated Clay
     pxl.Renderer.initialize(800.0, 600.0, allocator) catch |err| {
-        std.log.err("Failed to initialize Clay renderer: {}", .{err});
-        return;
-    };
-
-    // Initialize Clay
-    clay_state = pxl.ClayState.init(allocator, 800.0, 600.0) catch |err| {
-        std.log.err("Failed to initialize Clay: {}", .{err});
+        std.log.err("Failed to initialize UI renderer: {}", .{err});
         return;
     };
 
@@ -24,24 +16,6 @@ fn init() void {
 }
 
 fn frame() void {
-    if (clay_state == null) return;
-
-    var clay_st = &clay_state.?;
-
-    // Begin Clay layout
-    clay_st.beginLayout();
-
-    // Create a simple UI layout
-    createLayout();
-
-    // End layout and get render commands
-    const render_commands = clay_st.endLayout();
-
-    // Render the commands
-    pxl.Renderer.renderUI(render_commands);
-}
-
-fn createLayout() void {
     // Root container
     ui.UI()(.{
         .id = .ID("RootContainer"),
@@ -151,20 +125,11 @@ fn sidebarItem(index: u32) void {
 }
 
 fn cleanup() void {
-    if (clay_state) |*state| {
-        state.deinit();
-    }
-
-    // Deinitialize the renderer
+    // Deinitialize renderer and Clay system
     pxl.Renderer.deinitialize();
 
     _ = gpa.deinit();
     std.log.info("UI example cleaned up!", .{});
-}
-
-fn handleEvent(event: *const @import("sokol").app.Event) void {
-    _ = event;
-    // Handle events here if needed
 }
 
 pub fn main() void {
@@ -176,6 +141,5 @@ pub fn main() void {
         .init_fn = init,
         .frame_fn = frame,
         .cleanup_fn = cleanup,
-        .event_fn = handleEvent,
     });
 }
