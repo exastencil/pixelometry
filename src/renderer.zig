@@ -276,14 +276,15 @@ pub var renderer: ?Renderer = null;
 pub var clay_state: ?ClayState = null;
 
 /// Initialize the renderer with Clay UI system
-pub fn initialize(screen_width: f32, screen_height: f32, allocator: std.mem.Allocator) !void {
+pub fn init(allocator: std.mem.Allocator, screen_width: f32, screen_height: f32) !void {
     renderer = Renderer.init(screen_width, screen_height);
     clay_state = try ClayState.init(allocator, screen_width, screen_height);
 }
 
-/// Cleanup resources
+/// Cleanup resources, calling optional cleanup function first
 /// Note: Sokol resources are automatically cleaned up when sg.shutdown() is called
-pub fn deinitialize() void {
+pub fn deinit() void {
+    // Then clean up renderer resources
     if (clay_state) |*state| {
         state.deinit();
         clay_state = null;

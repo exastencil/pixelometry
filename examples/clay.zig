@@ -2,19 +2,6 @@ const std = @import("std");
 const pxl = @import("pixelometry");
 const ui = pxl.UI;
 
-var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-fn init() void {
-    const allocator = gpa.allocator();
-
-    // Initialize the renderer with integrated Clay
-    pxl.Renderer.initialize(800.0, 600.0, allocator) catch |err| {
-        std.log.err("Failed to initialize UI renderer: {}", .{err});
-        return;
-    };
-
-    std.log.info("UI example initialized!", .{});
-}
-
 fn frame() void {
     // Root container
     ui.UI()(.{
@@ -124,22 +111,12 @@ fn sidebarItem(index: u32) void {
     });
 }
 
-fn cleanup() void {
-    // Deinitialize renderer and Clay system
-    pxl.Renderer.deinitialize();
-
-    _ = gpa.deinit();
-    std.log.info("UI example cleaned up!", .{});
-}
-
 pub fn main() void {
     pxl.runApp(.{
         .title = "Pixelometry UI Example",
         .width = 800,
         .height = 600,
     }, .{
-        .init_fn = init,
         .frame_fn = frame,
-        .cleanup_fn = cleanup,
     });
 }

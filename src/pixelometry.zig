@@ -69,12 +69,6 @@ pub const App = struct {
         });
     }
 
-    /// Override this method to implement custom initialization
-    pub fn onInit(self: *Self) void {
-        _ = self;
-        // Default implementation does nothing
-    }
-
     /// Override this method to implement custom frame rendering
     pub fn onFrame(self: *Self) void {
         _ = self;
@@ -98,6 +92,7 @@ pub const App = struct {
 // Global reference to current app and callbacks (needed for C callbacks)
 var current_app: ?*App = null;
 var current_callbacks: AppCallbacks = .{};
+var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
 /// Simple function to run a Pixelometry app with callbacks
 pub fn runApp(config: AppConfig, callbacks: AppCallbacks) void {
@@ -116,11 +111,17 @@ export fn appInit() void {
     if (current_app) |app| {
         std.log.info("Pixelometry app '{s}' initialized ({}x{})!", .{ app.config.title, app.config.width, app.config.height });
 
-        // Call function callback if available, otherwise call method
+        // Initialize the renderer after Sokol is set up
+        const allocator = gpa.allocator();
+
+        renderer.init(allocator, @floatFromInt(app.config.width), @floatFromInt(app.config.height)) catch |err| {
+            std.log.err("Failed to initialize renderer: {}", .{err});
+            return;
+        };
+
+        // Call init callback if requested
         if (current_callbacks.init_fn) |init_fn| {
             init_fn();
-        } else {
-            app.onInit();
         }
     }
 }
@@ -142,15 +143,11 @@ export fn appFrame() void {
 }
 
 export fn appCleanup() void {
-    if (current_app) |app| {
-        // Call function callback if available, otherwise call method
-        if (current_callbacks.cleanup_fn) |cleanup_fn| {
-            cleanup_fn();
-        } else {
-            app.onCleanup();
-        }
-    }
+    // Determine which cleanup function to use
+    current_app.?.onCleanup();
+    renderer.deinit();
     sg.shutdown();
+    _ = gpa.deinit();
 }
 
 export fn appEvent(e: [*c]const sapp.Event) void {
