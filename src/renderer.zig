@@ -54,24 +54,30 @@ pub const Vertex = struct {
 
 /// Sokol-backed Renderer for Pixelometry
 pub const Renderer = struct {
-    /// Screen dimensions
+    // Screen dimensions
     screen_width: f32,
     screen_height: f32,
-    /// GPU resources
+    // Target dimensions
+    target_width: i32,
+    target_height: i32,
+    // Canvas dimensions
+    canvas_width: i32,
+    canvas_height: i32,
+    // GPU resources
     shader_program: sg.Shader,
     vertex_buffer: sg.Buffer,
     index_buffer: sg.Buffer,
     pipeline: sg.Pipeline,
-    /// Vertex data staging
+    // Vertex data staging
     vertices: [1024]Vertex, // Static buffer for vertices
     indices: [1536]u16, // Static buffer for indices (6 per rectangle: 2 triangles)
     vertex_count: u32,
     index_count: u32,
-    /// Current scissor state
+    // Current scissor state
     scissor_active: bool,
     scissor_rect: struct { x: i32, y: i32, w: i32, h: i32 },
 
-    pub fn init(screen_width: f32, screen_height: f32) Renderer {
+    pub fn init(target_width: i32, target_height: i32) Renderer {
         // Create shader
         const shd = sg.makeShader(shader.pixelShaderDesc(sg.queryBackend()));
 
@@ -111,9 +117,17 @@ pub const Renderer = struct {
             .label = "pipeline",
         });
 
+        // Calculate dimensions
+        const screen_width = @as(f32, @floatFromInt(target_width));
+        const screen_height = @as(f32, @floatFromInt(target_height));
+
         return Renderer{
             .screen_width = screen_width,
             .screen_height = screen_height,
+            .target_width = target_width,
+            .target_height = target_height,
+            .canvas_width = target_height,
+            .canvas_height = target_height,
             .shader_program = shd,
             .vertex_buffer = vbuf,
             .index_buffer = ibuf,
@@ -258,6 +272,32 @@ pub const Renderer = struct {
     pub fn updateScreenSize(self: *Renderer, width: f32, height: f32) void {
         self.screen_width = width;
         self.screen_height = height;
+
+        const target_width_f32 = @as(f32, @floatFromInt(self.target_width));
+        const target_height_f32 = @as(f32, @floatFromInt(self.target_height));
+
+        const target_aspect_ratio = target_width_f32 / target_height_f32;
+        const aspect_ratio = width / height;
+
+        if (aspect_ratio > target_aspect_ratio) {
+            // Screen is wider than the ideal so use ideal height
+            self.canvas_height = self.target_height;
+            // and scale width up to a maximum of twice the target width
+            self.canvas_width = @intFromFloat(@round(@min(aspect_ratio * target_height_f32, 2.0 * target_width_f32)));
+        } else if (aspect_ratio < target_aspect_ratio) {
+            // Screen is taller than the ideal so use ideal width
+            self.canvas_width = self.target_width;
+            // and scale height up to a maximum of twice the target height
+            self.canvas_height = @intFromFloat(@round(@min(target_width_f32 / aspect_ratio, 2.0 * target_height_f32)));
+        } else {
+            // The aspect ratios match
+            self.canvas_width = self.target_width;
+            self.canvas_height = self.target_height;
+        }
+
+        // Assert that canvas dimensions never exceed twice the target dimensions
+        std.debug.assert(self.canvas_width <= 2 * self.target_width);
+        std.debug.assert(self.canvas_height <= 2 * self.target_height);
     }
 };
 
@@ -277,7 +317,7 @@ pub var clay_state: ?ClayState = null;
 
 /// Initialize the renderer with Clay UI system
 pub fn init(allocator: std.mem.Allocator, screen_width: f32, screen_height: f32) !void {
-    renderer = Renderer.init(screen_width, screen_height);
+    renderer = Renderer.init(@intFromFloat(screen_width), @intFromFloat(screen_height));
     clay_state = try ClayState.init(allocator, screen_width, screen_height);
 }
 
