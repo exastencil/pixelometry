@@ -1,17 +1,15 @@
 const std = @import("std");
 const pxl = @import("pixelometry");
-const clay = pxl.Clay;
-const clay_renderer = @import("../src/clay_sokol_renderer.zig");
+const ui = pxl.UI;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 var clay_state: ?pxl.ClayState = null;
-var renderer: ?pxl.Renderer = null;
 
 fn init() void {
     const allocator = gpa.allocator();
 
-    // Initialize the Sokol Clay renderer
-    clay_renderer.initialize(800.0, 600.0, allocator) catch |err| {
+    // Initialize the renderer
+    pxl.Renderer.initialize(800.0, 600.0, allocator) catch |err| {
         std.log.err("Failed to initialize Clay renderer: {}", .{err});
         return;
     };
@@ -22,17 +20,13 @@ fn init() void {
         return;
     };
 
-    // Initialize renderer
-    renderer = pxl.Renderer.init(800.0, 600.0);
-
-    std.log.info("Clay example initialized!", .{});
+    std.log.info("UI example initialized!", .{});
 }
 
 fn frame() void {
-    if (clay_state == null or renderer == null) return;
+    if (clay_state == null) return;
 
     var clay_st = &clay_state.?;
-    var rend = &renderer.?;
 
     // Begin Clay layout
     clay_st.beginLayout();
@@ -44,12 +38,12 @@ fn frame() void {
     const render_commands = clay_st.endLayout();
 
     // Render the commands
-    rend.renderClayCommands(render_commands);
+    pxl.Renderer.renderUI(render_commands);
 }
 
 fn createLayout() void {
     // Root container
-    clay.UI()(.{
+    ui.UI()(.{
         .id = .ID("RootContainer"),
         .layout = .{
             .direction = .top_to_bottom,
@@ -57,10 +51,10 @@ fn createLayout() void {
             .padding = .all(20),
             .child_gap = 16,
         },
-        .background_color = .{ 255, 255, 255, 255 },
+        .background_color = .{ 0, 0, 0, 0 },
     })({
         // Header
-        clay.UI()(.{
+        ui.UI()(.{
             .id = .ID("Header"),
             .layout = .{
                 .direction = .left_to_right,
@@ -70,14 +64,14 @@ fn createLayout() void {
             },
             .background_color = .{ 100, 149, 237, 255 },
         })({
-            clay.text("Pixelometry + Clay UI", .{
+            ui.text("Pixelometry + Clay UI", .{
                 .font_size = 24,
                 .color = .{ 0, 0, 0, 255 },
             });
         });
 
         // Content area
-        clay.UI()(.{
+        ui.UI()(.{
             .id = .ID("Content"),
             .layout = .{
                 .direction = .left_to_right,
@@ -86,7 +80,7 @@ fn createLayout() void {
             },
         })({
             // Sidebar
-            clay.UI()(.{
+            ui.UI()(.{
                 .id = .ID("Sidebar"),
                 .layout = .{
                     .direction = .top_to_bottom,
@@ -96,7 +90,7 @@ fn createLayout() void {
                 },
                 .background_color = .{ 200, 200, 200, 255 },
             })({
-                clay.text("Sidebar", .{
+                ui.text("Sidebar", .{
                     .font_size = 18,
                     .color = .{ 0, 0, 0, 255 },
                 });
@@ -108,7 +102,7 @@ fn createLayout() void {
             });
 
             // Main content
-            clay.UI()(.{
+            ui.UI()(.{
                 .id = .ID("MainContent"),
                 .layout = .{
                     .direction = .top_to_bottom,
@@ -118,17 +112,17 @@ fn createLayout() void {
                 },
                 .background_color = .{ 200, 200, 200, 255 },
             })({
-                clay.text("Main Content Area", .{
+                ui.text("Main Content Area", .{
                     .font_size = 20,
                     .color = .{ 0, 0, 0, 255 },
                 });
 
-                clay.text("This is a demonstration of Clay UI integration with Pixelometry.", .{
+                ui.text("This is a demonstration of Clay UI integration with Pixelometry.", .{
                     .font_size = 14,
                     .color = pxl.Color.rgba(64, 64, 64, 255).toClayColor(),
                 });
 
-                clay.text("Clay provides responsive layout capabilities that will be used for UI anchoring.", .{
+                ui.text("Clay provides responsive layout capabilities that will be used for UI anchoring.", .{
                     .font_size = 14,
                     .color = pxl.Color.rgba(64, 64, 64, 255).toClayColor(),
                 });
@@ -138,7 +132,7 @@ fn createLayout() void {
 }
 
 fn sidebarItem(index: u32) void {
-    clay.UI()(.{
+    ui.UI()(.{
         .id = .IDI("SidebarItem", index),
         .layout = .{
             .sizing = .{ .w = .grow, .h = .fixed(40) },
@@ -149,7 +143,7 @@ fn sidebarItem(index: u32) void {
     })({
         var buffer: [32]u8 = undefined;
         const text = std.fmt.bufPrint(&buffer, "Item {}", .{index + 1}) catch "Item";
-        clay.text(text, .{
+        ui.text(text, .{
             .font_size = 14,
             .color = .{ 255, 255, 255, 255 },
         });
@@ -161,11 +155,11 @@ fn cleanup() void {
         state.deinit();
     }
 
-    // Deinitialize the clay renderer
-    clay_renderer.deinitialize();
+    // Deinitialize the renderer
+    pxl.Renderer.deinitialize();
 
     _ = gpa.deinit();
-    std.log.info("Clay example cleaned up!", .{});
+    std.log.info("UI example cleaned up!", .{});
 }
 
 fn handleEvent(event: *const @import("sokol").app.Event) void {
@@ -175,7 +169,7 @@ fn handleEvent(event: *const @import("sokol").app.Event) void {
 
 pub fn main() void {
     pxl.runApp(.{
-        .title = "Pixelometry Clay Example",
+        .title = "Pixelometry UI Example",
         .width = 800,
         .height = 600,
     }, .{

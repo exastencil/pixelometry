@@ -3,55 +3,57 @@ const sokol = @import("sokol");
 const sg = sokol.gfx;
 const clay = @import("zclay");
 const shader = @import("shader.zig");
-const pxl = @import("pixelometry.zig");
 
 // Matrix type for 4x4 transformation matrix
 const Mat4 = [16]f32;
 
-/// Font wrapper for Sokol renderer
-pub const Font = struct {
-    /// Font ID for clay
-    id: u32,
-    /// Font size for measurement (we'll use a simple approximation for now)
-    base_size: f32,
-    /// Character width approximation
-    char_width_ratio: f32,
+/// Pixelometry Color type - matches Clay's Color structure
+/// Uses integer components in the range 0-255 for R, G, B, A
+pub const Color = struct {
+    r: u8 = 0,
+    g: u8 = 0,
+    b: u8 = 0,
+    a: u8 = 255,
+
+    /// Create a Color from RGBA values (0-255)
+    pub fn rgba(r: u8, g: u8, b: u8, a: u8) Color {
+        return Color{ .r = r, .g = g, .b = b, .a = a };
+    }
+
+    /// Create a Color from RGB values (0-255) with full alpha
+    pub fn rgb(r: u8, g: u8, b: u8) Color {
+        return Color{ .r = r, .g = g, .b = b };
+    }
+
+    /// Convert to Clay's Color format (which is [4]f32 in 0-255 range)
+    pub fn toClayColor(self: Color) clay.Color {
+        return .{ @floatFromInt(self.r), @floatFromInt(self.g), @floatFromInt(self.b), @floatFromInt(self.a) };
+    }
+
+    /// Create from Clay's Color format
+    pub fn fromClayColor(clay_color: clay.Color) Color {
+        return Color{ .r = @intFromFloat(clay_color[0]), .g = @intFromFloat(clay_color[1]), .b = @intFromFloat(clay_color[2]), .a = @intFromFloat(clay_color[3]) };
+    }
+
+    /// Convert to normalized float format (0.0-1.0) for GPU rendering
+    pub fn toFloats(self: Color) [4]f32 {
+        return .{
+            @as(f32, @floatFromInt(self.r)) / 255.0,
+            @as(f32, @floatFromInt(self.g)) / 255.0,
+            @as(f32, @floatFromInt(self.b)) / 255.0,
+            @as(f32, @floatFromInt(self.a)) / 255.0,
+        };
+    }
 };
 
-/// Global font list
-pub var fonts: ?std.ArrayList(Font) = null;
-
 /// Simple vertex structure for 2D rendering
-const Vertex = struct {
+pub const Vertex = struct {
     pos: [2]f32,
     color: [4]f32,
 };
 
-// Create a 2D orthographic projection matrix with top-left origin fix
-fn createOrthoMatrix(left: f32, right: f32, top: f32, bottom: f32) Mat4 {
-    const width = right - left;
-    const height = bottom - top;
-
-    return Mat4{
-        2.0 / width, 0.0, 0.0, -(right + left) / width,
-        0.0, 2.0 / height, 0.0,  (bottom + top) / height, // Flip Y translation
-        0.0, 0.0,          -1.0, 0.0,
-        0.0, 0.0,          0.0,  1.0,
-    };
-}
-
-// Transpose a 4x4 matrix (for HLSL row-major layout)
-fn transposeMatrix(m: Mat4) Mat4 {
-    return Mat4{
-        m[0], m[4], m[8],  m[12],
-        m[1], m[5], m[9],  m[13],
-        m[2], m[6], m[10], m[14],
-        m[3], m[7], m[11], m[15],
-    };
-}
-
-/// Render state for the Sokol backend with actual GPU rendering
-pub const SokolRenderer = struct {
+/// Sokol-backed Renderer for Pixelometry
+pub const Renderer = struct {
     /// Screen dimensions
     screen_width: f32,
     screen_height: f32,
@@ -69,8 +71,7 @@ pub const SokolRenderer = struct {
     scissor_active: bool,
     scissor_rect: struct { x: i32, y: i32, w: i32, h: i32 },
 
-    pub fn init(screen_width: f32, screen_height: f32) SokolRenderer {
-
+    pub fn init(screen_width: f32, screen_height: f32) Renderer {
         // Create shader
         const shd = sg.makeShader(shader.pixelShaderDesc(sg.queryBackend()));
 
@@ -78,14 +79,14 @@ pub const SokolRenderer = struct {
         const vbuf = sg.makeBuffer(.{
             .size = @sizeOf(Vertex) * 1024,
             .usage = .{ .vertex_buffer = true, .stream_update = true },
-            .label = "clay-vertices",
+            .label = "vertices",
         });
 
         // Create index buffer (dynamic for UI rendering)
         const ibuf = sg.makeBuffer(.{
             .size = @sizeOf(u16) * 1536,
             .usage = .{ .index_buffer = true, .stream_update = true },
-            .label = "clay-indices",
+            .label = "indices",
         });
 
         // Create rendering pipeline
@@ -107,10 +108,10 @@ pub const SokolRenderer = struct {
                 } },
                 .{}, .{}, .{}, // Fill remaining slots
             },
-            .label = "clay-pipeline",
+            .label = "pipeline",
         });
 
-        return SokolRenderer{
+        return Renderer{
             .screen_width = screen_width,
             .screen_height = screen_height,
             .shader_program = shd,
@@ -126,16 +127,8 @@ pub const SokolRenderer = struct {
         };
     }
 
-    /// Convert screen coordinates to normalized device coordinates
-    fn screenToNDC(self: *const SokolRenderer, x: f32, y: f32) [2]f32 {
-        return .{
-            (x * 2.0 / self.screen_width) - 1.0,
-            1.0 - (y * 2.0 / self.screen_height),
-        };
-    }
-
     /// Add a rectangle to the batch for rendering
-    pub fn drawRect(self: *SokolRenderer, x: f32, y: f32, width: f32, height: f32, color: pxl.Color) void {
+    pub fn drawRect(self: *Renderer, x: f32, y: f32, width: f32, height: f32, color: Color) void {
         // Check if we have space for 4 vertices and 6 indices
         if (self.vertex_count + 4 > self.vertices.len or self.index_count + 6 > self.indices.len) {
             // Flush current batch and reset
@@ -181,7 +174,7 @@ pub const SokolRenderer = struct {
     }
 
     /// Flush the current batch of vertices to GPU
-    pub fn flushBatch(self: *SokolRenderer) void {
+    pub fn flushBatch(self: *Renderer) void {
         if (self.vertex_count == 0) return;
 
         // Update vertex buffer
@@ -234,7 +227,7 @@ pub const SokolRenderer = struct {
     }
 
     /// Start scissor mode
-    pub fn beginScissor(self: *SokolRenderer, x: f32, y: f32, width: f32, height: f32) void {
+    pub fn beginScissor(self: *Renderer, x: f32, y: f32, width: f32, height: f32) void {
         // Flush current batch before changing scissor state
         self.flushBatch();
 
@@ -248,7 +241,7 @@ pub const SokolRenderer = struct {
     }
 
     /// End scissor mode
-    pub fn endScissor(self: *SokolRenderer) void {
+    pub fn endScissor(self: *Renderer) void {
         if (self.scissor_active) {
             // Flush current batch before changing scissor state
             self.flushBatch();
@@ -257,89 +250,103 @@ pub const SokolRenderer = struct {
     }
 
     /// Called at the end of frame to ensure all batched data is rendered
-    pub fn finishFrame(self: *SokolRenderer) void {
+    pub fn finishFrame(self: *Renderer) void {
         self.flushBatch();
+    }
+
+    /// Update screen dimensions (call when window is resized)
+    pub fn updateScreenSize(self: *Renderer, width: f32, height: f32) void {
+        self.screen_width = width;
+        self.screen_height = height;
     }
 };
 
-/// Global renderer instance
-pub var renderer: ?SokolRenderer = null;
-
-/// Convert a clay color to pxl.Color format
-pub fn clayColorToPxlColor(color: clay.Color) pxl.Color {
-    return pxl.Color.fromClayColor(color);
-}
-
-/// Callback for clay to get the dimensions of text data
-pub fn measureText(text: []const u8, config: *clay.TextElementConfig, user_data: void) clay.Dimensions {
-    _ = user_data;
-
-    if (fonts == null) {
-        return .{ .w = 0, .h = 0 };
-    }
-
-    if (config.font_id >= fonts.?.items.len) {
-        return .{ .w = 0, .h = 0 };
-    }
-
-    const font = fonts.?.items[config.font_id];
-    const scale_factor = @as(f32, @floatFromInt(config.font_size)) / font.base_size;
-
-    // Simple text measurement (you might want to implement proper font metrics)
-    var max_width: f32 = 0;
-    var current_width: f32 = 0;
-    var line_count: u32 = 1;
-
-    for (text) |char| {
-        if (char == '\n') {
-            max_width = @max(max_width, current_width);
-            current_width = 0;
-            line_count += 1;
-        } else {
-            current_width += @as(f32, @floatFromInt(config.font_size)) * font.char_width_ratio;
-        }
-    }
-
-    max_width = @max(max_width, current_width);
-
-    return .{
-        .w = max_width * scale_factor,
-        .h = @as(f32, @floatFromInt(config.font_size)) * @as(f32, @floatFromInt(line_count)),
+// Transpose a 4x4 matrix (for HLSL row-major layout)
+fn transposeMatrix(m: Mat4) Mat4 {
+    return Mat4{
+        m[0], m[4], m[8],  m[12],
+        m[1], m[5], m[9],  m[13],
+        m[2], m[6], m[10], m[14],
+        m[3], m[7], m[11], m[15],
     };
 }
 
-/// Initialize the clay-sokol renderer with the given screen dimensions
+// Global renderer instance
+pub var renderer: ?Renderer = null;
+
+/// Initialize the renderer
 pub fn initialize(screen_width: f32, screen_height: f32, allocator: std.mem.Allocator) !void {
-    // Initialize fonts list
-    fonts = std.ArrayList(Font).init(allocator);
-
-    // Add a default font
-    try fonts.?.append(.{
-        .id = 0,
-        .base_size = 16.0,
-        .char_width_ratio = 0.6, // Approximate character width ratio
-    });
-
-    // Initialize renderer
-    renderer = SokolRenderer.init(screen_width, screen_height);
+    _ = allocator; // Currently unused but kept for future font/resource management
+    renderer = Renderer.init(screen_width, screen_height);
 }
 
 /// Cleanup resources
 pub fn deinitialize() void {
-    if (fonts) |*font_list| {
-        font_list.deinit();
-        fonts = null;
-    }
     // Note: Sokol resources are automatically cleaned up when sg.shutdown() is called
 }
 
-/// Reset per-frame counters - should be called at the start of each frame
-pub fn startFrame() void {
-    // Reset per-frame counters if needed
+/// Clay UI integration state
+pub const ClayState = struct {
+    arena: clay.Arena,
+    memory: []u8,
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator, screen_width: f32, screen_height: f32) !ClayState {
+        const min_memory_size: u32 = clay.minMemorySize();
+        const memory = try allocator.alloc(u8, min_memory_size);
+        const arena = clay.createArenaWithCapacityAndMemory(memory);
+
+        _ = clay.initialize(arena, .{ .w = screen_width, .h = screen_height }, .{});
+        clay.setMeasureTextFunction(void, {}, measureText);
+
+        return ClayState{
+            .arena = arena,
+            .memory = memory,
+            .allocator = allocator,
+        };
+    }
+
+    pub fn deinit(self: *ClayState) void {
+        self.allocator.free(self.memory);
+    }
+
+    pub fn beginLayout(self: *ClayState) void {
+        _ = self;
+        clay.beginLayout();
+    }
+
+    pub fn endLayout(self: *ClayState) []clay.RenderCommand {
+        _ = self;
+        return clay.endLayout();
+    }
+
+    pub fn setPointerState(self: *ClayState, x: f32, y: f32, mouse_down: bool) void {
+        _ = self;
+        clay.setPointerState(.{ .x = x, .y = y }, mouse_down);
+    }
+};
+
+// Basic text measurement function for Clay
+fn measureText(clay_text: []const u8, config: *clay.TextElementConfig, user_data: void) clay.Dimensions {
+    _ = user_data;
+
+    // Simple text measurement - this should be replaced with proper font measurement
+    const char_width = @as(f32, @floatFromInt(config.font_size)) * 0.6; // Approximate character width
+    const char_height = @as(f32, @floatFromInt(config.font_size));
+
+    return .{
+        .w = char_width * @as(f32, @floatFromInt(clay_text.len)),
+        .h = char_height,
+    };
+}
+
+/// Convert a clay color to Color format
+pub fn clayColorToColor(color: clay.Color) Color {
+    return Color.fromClayColor(color);
 }
 
 /// Handle rendering a clay command array
-pub fn render(render_commands: []clay.RenderCommand) void {
+pub fn renderUI(render_commands: []clay.RenderCommand) void {
     if (renderer == null) {
         return;
     }
@@ -355,19 +362,19 @@ pub fn render(render_commands: []clay.RenderCommand) void {
             .rectangle => {
                 // Get the actual background color from the render data
                 const rect_data = command.render_data.rectangle;
-                const color = clayColorToPxlColor(rect_data.background_color);
+                const color = clayColorToColor(rect_data.background_color);
                 sokol_renderer.drawRect(bbox.x, bbox.y, bbox.width, bbox.height, color);
             },
 
             .text => {
                 // Use default colors for now since config access is not available
-                const bg_color = pxl.Color.rgba(51, 51, 51, 255); // Dark gray for text background
+                const bg_color = Color.rgba(51, 51, 51, 255); // Dark gray for text background
                 sokol_renderer.drawRect(bbox.x, bbox.y, bbox.width, bbox.height, bg_color);
             },
 
             .image => {
                 // Placeholder for image rendering
-                const color = pxl.Color.rgba(128, 128, 128, 255);
+                const color = Color.rgba(128, 128, 128, 255);
                 sokol_renderer.drawRect(bbox.x, bbox.y, bbox.width, bbox.height, color);
             },
 
@@ -382,7 +389,7 @@ pub fn render(render_commands: []clay.RenderCommand) void {
             .border => {
                 // Get the actual border data from the render command
                 const border_data = command.render_data.border;
-                const color = clayColorToPxlColor(border_data.color);
+                const color = clayColorToColor(border_data.color);
 
                 // Use actual border widths from the data
                 const top_width = @as(f32, @floatFromInt(border_data.width.top));
@@ -416,12 +423,4 @@ pub fn render(render_commands: []clay.RenderCommand) void {
 
     // Flush any remaining batched data
     sokol_renderer.finishFrame();
-}
-
-/// Update screen dimensions (call when window is resized)
-pub fn updateScreenSize(width: f32, height: f32) void {
-    if (renderer) |*r| {
-        r.screen_width = width;
-        r.screen_height = height;
-    }
 }

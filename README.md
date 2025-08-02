@@ -1,47 +1,64 @@
 # Pixelometry
 
-A lightweight game engine designed for creating isometric pixel-buffer games with precise pixel-perfect rendering, 3D physics calculations, and responsive UI anchoring.
+A lightweight game engine designed for creating isometric pixel-buffer games with
+precise pixel-perfect rendering, 3D physics calculations, and responsive UI
+anchoring.
 
 ## Overview
 
-Pixelometry specializes in creating a very specific kind of game: **isometric pixel-buffer games** with lightweight UI that are predominantly controller-operated. The engine generates scenes with models in 3D space and performs physics calculations in 3D, but renders objects and UI using 2D pixel sprites to ensure perfect pixel alignment.
+Pixelometry specializes in creating a very specific kind of game: **isometric
+pixel-buffer games** with lightweight UI that are predominantly
+controller-operated. The engine generates scenes with models in 3D space and
+performs physics calculations in 3D, but renders objects and UI using 2D pixel
+sprites to ensure perfect pixel alignment.
 
 ### Key Features
 
-- **Pixel-Perfect Rendering**: All sprites and UI elements are rendered without scaling, maintaining consistent pixel sizes
-- **3D Physics, 2D Rendering**: Full 3D scene calculations with 2D sprite-based visual output
-- **Responsive Canvas**: Dynamic resolution scaling that adapts to available screen space
-- **UI Anchoring System**: UI elements anchor to 5 points (center, top, right, bottom, left) for responsive layouts
-- **Multi-Buffer Composition**: Separate pixel buffers for scene and each UI anchor point
-- **Target Resolution Design**: Design assets for a specific resolution with intelligent upscaling
+- **Pixel-Perfect Rendering**: All sprites and UI elements are rendered without
+  scaling, maintaining consistent pixel sizes
+- **3D Physics, 2D Rendering**: Full 3D scene calculations with 2D sprite-based
+  visual output
+- **Responsive Canvas**: Dynamic resolution scaling that adapts to available
+  screen space
+- **Responsive UI System**: Clay UI integration provides flexible, responsive
+  layouts that adapt to screen size
+- **Immediate Mode UI**: Clean, composable UI components with automatic layout
+  management
+- **Target Resolution Design**: Design assets for a specific resolution with
+  intelligent upscaling
 
 ## How It Works
 
 ### Resolution System
 
 1. **Target Resolution**: You specify a target resolution for your game design
-2. **Dynamic Scaling**: The engine allocates an appropriate multiple of the target resolution within available screen space
-3. **Aspect Ratio Adaptation**: The target resolution is centered, with width or height extended (never more than double)
-4. **Responsive Canvas**: UI elements move appropriately as the screen resizes based on their anchor points
+2. **Dynamic Scaling**: The engine allocates an appropriate multiple of the
+   target resolution within available screen space
+3. **Aspect Ratio Adaptation**: The target resolution is centered, with width
+   or height extended (never more than double)
+4. **Responsive Canvas**: UI elements move appropriately as the screen resizes
+   based on their anchor points
 
 ### Rendering Pipeline
 
 1. **3D Scene Calculation**: Physics and scene logic operate in full 3D space
-2. **Pixel Buffer System**:
-   - Main scene buffer renders to screen edges (like traditional 3D engines)
-   - 5 separate UI buffers for each anchor point (center, top, right, bottom, left)
-3. **Composition**: All buffers are composited during final rendering
+2. **Clay UI Layout**: Responsive immediate-mode UI with automatic layout
+   calculations
+3. **GPU Rendering**: Hardware-accelerated rendering with batched draw calls
+   for optimal performance
 
 ## Technical Details
 
 - **Language**: [Zig](https://ziglang.org/)
-- **Graphics Backend**: [Sokol](https://github.com/floooh/sokol) (cross-platform graphics library)
+- **Graphics Backend**: [Sokol](https://github.com/floooh/sokol) (cross-platform
+  graphics library)
 - **Platforms**: Native (Windows, macOS, Linux) and Web (WebAssembly)
 - **Version**: 0.1.0
 
 ## Dependencies
 
 - **sokol-zig**: Cross-platform graphics, audio, and input library
+- **zclay**: Responsive immediate-mode UI library for layout management
 - **Zig**: Version compatible with current sokol-zig bindings
 
 ## Building
@@ -61,7 +78,7 @@ zig build run
 
 # Run specific examples
 zig build run-basic
-zig build run-custom
+zig build run-clay
 ```
 
 ### Web Build
@@ -154,38 +171,47 @@ pub fn main() void {
 ```
 pixelometry/
 ├── src/
-│   └── pixelometry.zig      # Main engine code
+│   ├── pixelometry.zig      # Main engine framework and app lifecycle
+│   ├── renderer.zig         # Sokol-based renderer with Clay UI integration
+│   └── shader.zig           # Auto-generated shader bindings
+├── shaders/
+│   └── pixel.glsl           # GLSL shader source for 2D rendering
 ├── examples/
 │   ├── basic.zig            # Basic usage example
-│   └── custom.zig           # Custom configuration example
-├── build.zig                # Build configuration
-├── build.zig.zon           # Package manifest
-└── README.md               # This file
+│   └── clay.zig             # Clay UI example with responsive layout
+├── build.zig                # Build configuration with shader compilation
+├── build.zig.zon            # Package manifest with dependencies
+└── README.md                # This file
 ```
 
 ## Development Status
 
-🚧 **Early Development** - Pixelometry is currently in early development. The core application framework is implemented, but many of the advanced features described in the overview (3D-to-2D rendering pipeline, UI anchoring system, multi-buffer composition) are planned for future releases.
+🚧 **Early Development** - Pixelometry is currently in early development. The
+core application framework is implemented, but many of the advanced features
+described in the overview (3D-to-2D rendering pipeline, UI anchoring system,
+multi-buffer composition) are planned for future releases.
 
 ### Current Features
 
 - ✅ Basic application framework
 - ✅ Sokol graphics integration
+- ✅ Clay UI integration with responsive layouts
+- ✅ Hardware-accelerated rendering with batching
 - ✅ Cross-platform support (native + web)
 - ✅ Example applications
 
 ### Planned Features
 
 - 🔄 3D scene management with 2D sprite rendering
-- 🔄 UI anchoring system (5-point anchor layout)
-- 🔄 Multi-buffer pixel composition
+- 🔄 Sprite batching and texture atlas support
 - 🔄 Responsive resolution scaling
 - 🔄 Controller input handling
 - 🔄 Asset management system
 
 ## Contributing
 
-This project is in active development. Contributions, feedback, and suggestions are welcome!
+This project is in active development. Contributions, feedback, and suggestions
+are welcome!
 
 ## License
 
@@ -193,4 +219,6 @@ This project is in active development. Contributions, feedback, and suggestions 
 
 ---
 
-**Note**: This README reflects the current state and future vision of Pixelometry. Some features described in the overview are planned for implementation and may not yet be available in the current codebase.
+**Note**: This README reflects the current state and future vision of
+Pixelometry. Some features described in the overview are planned for
+implementation and may not yet be available in the current codebase.
