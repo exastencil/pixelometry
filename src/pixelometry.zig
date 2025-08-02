@@ -80,13 +80,6 @@ pub const App = struct {
         _ = self;
         // Default implementation does nothing
     }
-
-    /// Override this method to handle events
-    pub fn onEvent(self: *Self, event: *const sapp.Event) void {
-        _ = self;
-        _ = event;
-        // Default implementation does nothing
-    }
 };
 
 // Global reference to current app and callbacks (needed for C callbacks)
@@ -151,12 +144,13 @@ export fn appCleanup() void {
 }
 
 export fn appEvent(e: [*c]const sapp.Event) void {
-    if (current_app) |app| {
-        // Call function callback if available, otherwise call method
-        if (current_callbacks.event_fn) |event_fn| {
-            event_fn(@ptrCast(e));
-        } else {
-            app.onEvent(@ptrCast(e));
-        }
+    // Check for window resize events
+    if (e.*.type == sapp.EventType.RESIZED) {
+        renderer.updateScreenSize(@floatFromInt(e.*.framebuffer_width), @floatFromInt(e.*.framebuffer_height));
+    }
+
+    // Call function callback if available, otherwise call method
+    if (current_callbacks.event_fn) |event_fn| {
+        event_fn(@ptrCast(e));
     }
 }

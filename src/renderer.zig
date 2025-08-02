@@ -326,6 +326,11 @@ const ClayState = struct {
         _ = self;
         clay.setPointerState(.{ .x = x, .y = y }, mouse_down);
     }
+
+    pub fn updateLayoutDimensions(self: *ClayState, screen_width: f32, screen_height: f32) void {
+        _ = self;
+        clay.setLayoutDimensions(.{ .w = screen_width, .h = screen_height });
+    }
 };
 
 // Basic text measurement function for Clay
@@ -359,6 +364,16 @@ pub fn endLayout() void {
 pub fn setPointerState(x: f32, y: f32, mouse_down: bool) void {
     if (clay_state) |*state| {
         state.setPointerState(x, y, mouse_down);
+    }
+}
+
+/// Update screen dimensions when window is resized
+pub fn updateScreenSize(width: f32, height: f32) void {
+    if (renderer) |*r| {
+        r.updateScreenSize(width, height);
+    }
+    if (clay_state) |*state| {
+        state.updateLayoutDimensions(width, height);
     }
 }
 
